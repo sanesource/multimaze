@@ -1,0 +1,205 @@
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import socketService from '../services/socket';
+
+const GameContext = createContext();
+
+export function GameProvider({ children }) {
+  const [gameState, setGameState] = useState('home'); // home, lobby, playing, results
+  const [room, setRoom] = useState(null);
+  const [playerId, setPlayerId] = useState(null);
+  const [players, setPlayers] = useState([]);
+  const [maze, setMaze] = useState(null);
+  const [timer, setTimer] = useState({ elapsed: 0, remaining: 0 });
+  const [gameResults, setGameResults] = useState(null);
+  const [error, setError] = useState(null);
+  const [playerPositions, setPlayerPositions] = useState({});
+
+  useEffect(() => {
+    socketService.connect();
+
+    // Room events
+    socketService.on('room-updated', handleRoomUpdated);
+    socketService.on('player-joined', handlePlayerJoined);
+    socketService.on('player-left', handlePlayerLeft);
+    socketService.on('room-closed', handleRoomClosed);
+
+    // Game events
+    socketService.on('game-started', handleGameStarted);
+    socketService.on('player-moved', handlePlayerMoved);
+    socketService.on('player-finished', handlePlayerFinished);
+    socketService.on('winner-announced', handleWinnerAnnounced);
+    socketService.on('timer-update', handleTimerUpdate);
+    socketService.on('timer-warning', handleTimerWarning);
+    socketService.on('game-ended', handleGameEnded);
+    socketService.on('player-disconnected', handlePlayerDisconnected);
+    socketService.on('error', handleError);
+
+    return () => {
+      socketService.off('room-updated', handleRoomUpdated);
+      socketService.off('player-joined', handlePlayerJoined);
+      socketService.off('player-left', handlePlayerLeft);
+      socketService.off('room-closed', handleRoomClosed);
+      socketService.off('game-started', handleGameStarted);
+      socketService.off('player-moved', handlePlayerMoved);
+      socketService.off('player-finished', handlePlayerFinished);
+      socketService.off('winner-announced', handleWinnerAnnounced);
+      socketService.off('timer-update', handleTimerUpdate);
+      socketService.off('timer-warning', handleTimerWarning);
+      socketService.off('game-ended', handleGameEnded);
+      socketService.off('player-disconnected', handlePlayerDisconnected);
+      socketService.off('error', handleError);
+    };
+  }, []);
+
+  const handleRoomUpdated = useCallback((roomData) => {
+    setRoom(roomData);
+    setPlayers(roomData.players);
+  }, []);
+
+  const handlePlayerJoined = useCallback((data) => {
+    console.log(data.message);
+  }, []);
+
+  const handlePlayerLeft = useCallback((data) => {
+    console.log(data.message);
+  }, []);
+
+  const handleRoomClosed = useCallback((data) => {
+    setError(data.message);
+    setGameState('home');
+    setRoom(null);
+  }, []);
+
+  const handleGameStarted = useCallback((roomData) => {
+    setRoom(roomData);
+    setMaze(roomData.maze);
+    setPlayers(roomData.players);
+    setGameState('playing');
+    
+    // Initialize player positions
+    const positions = {};
+    roomData.players.forEach(player => {
+      positions[player.playerId] = player.position;
+    });
+    setPlayerPositions(positions);
+  }, []);
+
+  const handlePlayerMoved = useCallback((data) => {
+    setPlayerPositions(prev => ({
+      ...prev,
+      [data.playerId]: data.position
+    }));
+  }, []);
+
+  const handlePlayerFinished = useCallback((data) => {
+    console.log(`${data.username} finished in ${data.completionTime}s!`);
+  }, []);
+
+  const handleWinnerAnnounced = useCallback((data) => {
+    console.log(`🏆 ${data.username} wins!`);
+  }, []);
+
+  const handleTimerUpdate = useCallback((data) => {
+    setTimer(data);
+  }, []);
+
+  const handleTimerWarning = useCallback((data) => {
+    console.log(`⚠️ ${data.remaining} seconds remaining!`);
+  }, []);
+
+  const handleGameEnded = useCallback((results) => {
+    setGameResults(results);
+    setGameState('results');
+  }, []);
+
+  const handlePlayerDisconnected = useCallback((data) => {
+    console.log(`${data.username} disconnected`);
+  }, []);
+
+  const handleError = useCallback((data) => {
+    setError(data.message);
+  }, []);
+
+  const createRoom = useCallback((username, settings) => {
+    socketService.createRoom(username, settings, (response) => {
+      if (response.success) {
+        setPlayerId(response.data.playerId);
+        setRoom(response.data.room);
+        setPlayers(response.data.room.players);
+        setGameState('lobby');
+        setError(null);
+      } else {
+        setError(response.error);
+      }
+    });
+  }, []);
+
+  const joinRoom = useCallback((roomCode, username) => {
+    socketService.joinRoom(roomCode, username, (response) => {
+      if (response.success) {
+        setPlayerId(response.data.playerId);
+        setRoom(response.data.room);
+        setPlayers(response.data.room.players);
+        setGameState('lobby');
+        setError(null);
+      } else {
+        setError(response.error);
+      }
+    });
+  }, []);
+
+  const leaveRoom = useCallback(() => {
+    socketService.leaveRoom();
+    setGameState('home');
+    setRoom(null);
+    setPlayers([]);
+    setMaze(null);
+    setGameResults(null);
+  }, []);
+
+  const toggleReady = useCallback((isReady) => {
+    socketService.setReady(isReady);
+  }, []);
+
+  const startGame = useCallback(() => {
+    socketService.startGame();
+  }, []);
+
+  const movePlayer = useCallback((direction) => {
+    socketService.movePlayer(direction);
+  }, []);
+
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
+
+  const value = {
+    gameState,
+    room,
+    playerId,
+    players,
+    maze,
+    timer,
+    gameResults,
+    error,
+    playerPositions,
+    createRoom,
+    joinRoom,
+    leaveRoom,
+    toggleReady,
+    startGame,
+    movePlayer,
+    clearError,
+  };
+
+  return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
+}
+
+export function useGame() {
+  const context = useContext(GameContext);
+  if (!context) {
+    throw new Error('useGame must be used within GameProvider');
+  }
+  return context;
+}
+
