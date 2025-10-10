@@ -5,7 +5,7 @@ module.exports = {
   nodeEnv: process.env.NODE_ENV || "development",
   corsOrigin: process.env.CORS_ORIGIN || "http://localhost:5173",
   maxRooms: parseInt(process.env.MAX_ROOMS) || 50,
-  maxPlayersPerRoom: parseInt(process.env.MAX_PLAYERS_PER_ROOM) || 8,
+  maxPlayersPerRoom: parseInt(process.env.MAX_PLAYERS_PER_ROOM) || 16,
   roomInactivityTimeout:
     parseInt(process.env.ROOM_INACTIVITY_TIMEOUT) || 600000, // 10 minutes
   positionUpdateInterval: parseInt(process.env.POSITION_UPDATE_INTERVAL) || 100, // 100ms

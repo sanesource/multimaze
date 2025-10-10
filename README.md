@@ -11,7 +11,7 @@ A competitive multiplayer maze game where players race against time to navigate 
 
 ### 🎯 Core Gameplay
 
-- **Real-time Multiplayer**: Synchronized gameplay for 2-8 players
+- **Real-time Multiplayer**: Synchronized gameplay for 2-16 players
 - **Procedural Maze Generation**: Unique mazes using DFS algorithm
 - **3 Difficulty Levels**: Easy (15×15), Medium (25×25), Hard (35×35)
 - **Competitive Rankings**: Based on completion time and distance
@@ -73,7 +73,7 @@ PORT=3000
 NODE_ENV=development
 CORS_ORIGIN=http://localhost:5173
 MAX_ROOMS=50
-MAX_PLAYERS_PER_ROOM=8
+MAX_PLAYERS_PER_ROOM=16
 ROOM_INACTIVITY_TIMEOUT=600000
 POSITION_UPDATE_INTERVAL=100
 ```
@@ -128,7 +128,7 @@ npm run dev
 4. Configure game settings:
    - Difficulty (Easy/Medium/Hard)
    - Timer duration (2-10 minutes)
-   - Max players (2-8)
+   - Max players (2-16)
 5. Click **"Create Room"**
 6. Share the 6-character room code with friends
 
@@ -344,7 +344,7 @@ curl http://localhost:3000/api/rooms
 | `NODE_ENV`                 | Environment            | development           |
 | `CORS_ORIGIN`              | Frontend URL           | http://localhost:5173 |
 | `MAX_ROOMS`                | Max concurrent rooms   | 50                    |
-| `MAX_PLAYERS_PER_ROOM`     | Max players per room   | 8                     |
+| `MAX_PLAYERS_PER_ROOM`     | Max players per room   | 16                    |
 | `ROOM_INACTIVITY_TIMEOUT`  | Room cleanup time (ms) | 600000 (10 min)       |
 | `POSITION_UPDATE_INTERVAL` | Update frequency (ms)  | 100                   |
 

@@ -5,12 +5,14 @@
 ### 1. Install Dependencies
 
 **Backend:**
+
 ```bash
 cd backend
 npm install
 ```
 
 **Frontend:**
+
 ```bash
 cd frontend
 npm install
@@ -19,6 +21,7 @@ npm install
 ### 2. Start Servers
 
 **Option A: Use the start script (easiest)**
+
 ```bash
 chmod +x start.sh
 ./start.sh
@@ -27,12 +30,14 @@ chmod +x start.sh
 **Option B: Manual start**
 
 Terminal 1 (Backend):
+
 ```bash
 cd backend
 npm start
 ```
 
 Terminal 2 (Frontend):
+
 ```bash
 cd frontend
 npm run dev
@@ -45,6 +50,7 @@ Open your browser and go to: **http://localhost:5173**
 ## 🎮 Quick Test (2 Players)
 
 1. **Browser 1:**
+
    - Open http://localhost:5173
    - Click "Create Room"
    - Enter username: "Player1"
@@ -52,6 +58,7 @@ Open your browser and go to: **http://localhost:5173**
    - **Copy the room code** (e.g., "ABC123")
 
 2. **Browser 2 (or incognito tab):**
+
    - Open http://localhost:5173
    - Click "Join Room"
    - Enter username: "Player2"
@@ -71,6 +78,7 @@ Open your browser and go to: **http://localhost:5173**
 ## 🔧 Troubleshooting
 
 ### Port Already in Use
+
 ```bash
 # Kill backend (port 3000)
 lsof -ti:3000 | xargs kill
@@ -80,6 +88,7 @@ lsof -ti:5173 | xargs kill
 ```
 
 ### Backend Won't Start
+
 ```bash
 cd backend
 npm install
@@ -87,6 +96,7 @@ npm start
 ```
 
 ### Frontend Won't Start
+
 ```bash
 cd frontend
 npm install
@@ -94,6 +104,7 @@ npm run dev
 ```
 
 ### Can't Connect
+
 1. Make sure both backend AND frontend are running
 2. Check http://localhost:3000/api/health (should return "healthy")
 3. Check http://localhost:5173 (should show the game)
@@ -113,10 +124,10 @@ Both should respond without errors!
 
 ## 🎉 Ready to Play!
 
-That's it! You now have a fully working multiplayer maze game. 
+That's it! You now have a fully working multiplayer maze game.
 
 - Create rooms with different difficulties
-- Play with 2-8 friends simultaneously
+- Play with 2-16 friends simultaneously
 - Compete for the fastest time
 - See real-time rankings!
 

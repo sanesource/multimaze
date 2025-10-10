@@ -139,6 +139,10 @@ export default function Home() {
                   <option value="4">4 Players</option>
                   <option value="6">6 Players</option>
                   <option value="8">8 Players</option>
+                  <option value="10">10 Players</option>
+                  <option value="12">12 Players</option>
+                  <option value="14">14 Players</option>
+                  <option value="16">16 Players</option>
                 </select>
               </div>
 

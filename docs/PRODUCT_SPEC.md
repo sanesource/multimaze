@@ -35,7 +35,7 @@ MultiMaze is a competitive multiplayer maze game where players race against time
 - Average game session duration: 3-5 minutes
 - Room creation to game start time: < 30 seconds
 - Player retention rate: > 60% for second game
-- Concurrent players per room: 2-8 players
+- Concurrent players per room: 2-16 players
 - Zero desync issues during gameplay
 
 ## 3. User Stories
@@ -75,7 +75,7 @@ MultiMaze is a competitive multiplayer maze game where players race against time
 - Creator can configure:
   - Maze difficulty (Easy, Medium, Hard)
   - Timer duration (2-10 minutes)
-  - Maximum number of players (2-8)
+  - Maximum number of players (2-16)
 - Room link/code is shareable
 - Creator has host privileges
 
@@ -473,7 +473,7 @@ MultiMaze is a competitive multiplayer maze game where players race against time
 ### 12.1 Must-Have for Launch
 
 - ✅ Create and join rooms
-- ✅ Real-time multiplayer (2-8 players)
+- ✅ Real-time multiplayer (2-16 players)
 - ✅ Maze generation (at least one difficulty)
 - ✅ Timer system
 - ✅ Ranking system

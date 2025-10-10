@@ -499,7 +499,7 @@ cd frontend && npm run dev
 A **complete, working, production-ready** multiplayer maze game with:
 
 ✅ Beautiful modern UI
-✅ Real-time multiplayer (2-8 players)
+✅ Real-time multiplayer (2-16 players)
 ✅ Procedural maze generation
 ✅ Competitive ranking system
 ✅ Full Socket.io integration

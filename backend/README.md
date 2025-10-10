@@ -6,7 +6,7 @@ Real-time multiplayer maze game backend built with Node.js, Express, and Socket.
 
 - 🎮 Real-time multiplayer gameplay using WebSocket (Socket.io)
 - 🏰 Procedural maze generation with multiple difficulty levels
-- 🎯 Room-based game sessions with up to 8 players
+- 🎯 Room-based game sessions with up to 16 players
 - 🏆 Dynamic ranking and scoring system
 - ⚡ High-performance A\* pathfinding
 - 🔒 Input validation and security measures
@@ -52,7 +52,7 @@ PORT=3000
 NODE_ENV=development
 CORS_ORIGIN=http://localhost:5173
 MAX_ROOMS=50
-MAX_PLAYERS_PER_ROOM=8
+MAX_PLAYERS_PER_ROOM=16
 ROOM_INACTIVITY_TIMEOUT=600000
 POSITION_UPDATE_INTERVAL=100
 ```
@@ -132,7 +132,7 @@ socket.emit(
     settings: {
       difficulty: "medium", // 'easy', 'medium', 'hard'
       timerDuration: 300, // seconds (120-600)
-      maxPlayers: 8, // 2-8
+      maxPlayers: 16, // 2-16
     },
   },
   (response) => {

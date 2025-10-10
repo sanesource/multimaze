@@ -8,7 +8,7 @@ class Room {
     this.settings = {
       difficulty: settings.difficulty || "hard",
       timerDuration: settings.timerDuration || 300, // seconds
-      maxPlayers: Math.min(settings.maxPlayers || 8, 8),
+      maxPlayers: Math.min(settings.maxPlayers || 8, 16),
     };
     this.status = "waiting"; // 'waiting', 'in-progress', 'finished'
     this.maze = null;
