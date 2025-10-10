@@ -36,10 +36,13 @@ class MazeGenerator {
       .fill(null)
       .map(() => Array(size).fill(1));
 
-    // Generate maze using DFS
+    // Generate maze using DFS (perfect maze: single path between any two cells)
     this.generateMazeDFS(grid, 1, 1);
 
-    // Ensure borders are walls
+    // Add extra connections to create loops (multiple paths)
+    this.addLoops(grid, difficulty);
+
+    // Ensure borders are walls (never carve borders)
     this.ensureBorders(grid, size);
 
     // Set the grid
@@ -83,6 +86,106 @@ class MazeGenerator {
       grid[ny][nx] = 0;
 
       stack.push([nx, ny]);
+    }
+  }
+
+  /**
+   * Add loops by removing some interior walls between adjacent path cells
+   * The density of loops depends on difficulty
+   */
+  addLoops(grid, difficulty) {
+    const size = grid.length;
+
+    // Loop density by difficulty: higher means more extra openings
+    const densityMap = {
+      easy: 0.04,
+      medium: 0.08,
+      hard: 0.12,
+    };
+    const density = densityMap[difficulty] || densityMap.medium;
+    const minLoopsMap = {
+      easy: 1,
+      medium: 2,
+      hard: 3,
+    };
+    const minLoops = minLoopsMap[difficulty] || minLoopsMap.medium;
+
+    let loopsAdded = 0;
+
+    // Iterate only interior coordinates, skip borders entirely
+    for (let y = 2; y < size - 2; y++) {
+      for (let x = 2; x < size - 2; x++) {
+        // Consider only wall positions that sit between two cells:
+        // - Vertical walls have (x odd, y even)
+        // - Horizontal walls have (x even, y odd)
+        const isVerticalWall = x % 2 === 1 && y % 2 === 0;
+        const isHorizontalWall = x % 2 === 0 && y % 2 === 1;
+        if (!isVerticalWall && !isHorizontalWall) continue;
+
+        if (grid[y][x] !== 1) continue; // Only carve existing walls
+
+        // Check the two sides are both paths (cells)
+        let canCarve = false;
+        if (isVerticalWall) {
+          // Above and below must be paths
+          if (grid[y - 1][x] === 0 && grid[y + 1][x] === 0) {
+            canCarve = true;
+          }
+        } else if (isHorizontalWall) {
+          // Left and right must be paths
+          if (grid[y][x - 1] === 0 && grid[y][x + 1] === 0) {
+            canCarve = true;
+          }
+        }
+
+        if (!canCarve) continue;
+
+        // Randomly carve based on density
+        if (Math.random() < density) {
+          grid[y][x] = 0;
+          loopsAdded++;
+        }
+      }
+    }
+
+    // Guarantee at least a minimum number of loops by targeting near endpoint
+    if (loopsAdded < minLoops) {
+      const endX = size - 2;
+      const endY = size - 2;
+      const tryCarve = (x, y) => {
+        const isVerticalWall = x % 2 === 1 && y % 2 === 0;
+        const isHorizontalWall = x % 2 === 0 && y % 2 === 1;
+        if (!isVerticalWall && !isHorizontalWall) return false;
+        if (grid[y][x] !== 1) return false;
+        if (isVerticalWall) {
+          if (grid[y - 1][x] === 0 && grid[y + 1][x] === 0) {
+            grid[y][x] = 0;
+            return true;
+          }
+        } else if (isHorizontalWall) {
+          if (grid[y][x - 1] === 0 && grid[y][x + 1] === 0) {
+            grid[y][x] = 0;
+            return true;
+          }
+        }
+        return false;
+      };
+
+      // Expand search square around the endpoint until enough loops are carved
+      for (let radius = 2; radius <= 6 && loopsAdded < minLoops; radius++) {
+        const minX = Math.max(2, endX - radius);
+        const maxX = Math.min(size - 3, endX + radius);
+        const minY = Math.max(2, endY - radius);
+        const maxY = Math.min(size - 3, endY + radius);
+
+        for (let y = minY; y <= maxY && loopsAdded < minLoops; y++) {
+          for (let x = minX; x <= maxX && loopsAdded < minLoops; x++) {
+            if (tryCarve(x, y)) {
+              loopsAdded++;
+            }
+          }
+        }
+      }
     }
   }
 

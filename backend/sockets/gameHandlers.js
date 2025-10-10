@@ -67,6 +67,8 @@ class GameHandlers {
       // Create room
       const room = roomManager.createRoom(playerId, settings || {});
       room.addPlayer(player);
+      // Host is always ready
+      player.setReady(true);
       roomManager.addPlayerToRoom(playerId, room.roomId);
 
       // Join socket room
@@ -223,7 +225,9 @@ class GameHandlers {
       const player = room.getPlayer(playerId);
       if (!player) return;
 
-      player.setReady(isReady);
+      // Force host to remain ready
+      const isHost = playerId === room.hostId;
+      player.setReady(isHost ? true : isReady);
       room.updateActivity();
 
       console.log(`${player.username} ready status: ${isReady}`);
@@ -249,6 +253,13 @@ class GameHandlers {
       if (playerId !== room.hostId) {
         return socket.emit("error", {
           message: "Only the host can start the game",
+        });
+      }
+
+      // Require all players to be ready
+      if (!room.areAllPlayersReady()) {
+        return socket.emit("error", {
+          message: "All players must be ready before starting the game",
         });
       }
 

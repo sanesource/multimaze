@@ -8,7 +8,7 @@ export default function Home() {
   const [showJoin, setShowJoin] = useState(false);
   const [username, setUsername] = useState('');
   const [roomCode, setRoomCode] = useState('');
-  const [difficulty, setDifficulty] = useState('medium');
+  const [difficulty, setDifficulty] = useState('hard');
   const [timerDuration, setTimerDuration] = useState(300);
   const [maxPlayers, setMaxPlayers] = useState(4);
 

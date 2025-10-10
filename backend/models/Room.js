@@ -6,7 +6,7 @@ class Room {
     this.hostId = hostId;
     this.players = new Map(); // playerId -> Player
     this.settings = {
-      difficulty: settings.difficulty || "medium",
+      difficulty: settings.difficulty || "hard",
       timerDuration: settings.timerDuration || 300, // seconds
       maxPlayers: Math.min(settings.maxPlayers || 8, 8),
     };
@@ -48,6 +48,10 @@ class Room {
     // If host leaves, transfer to another player or close room
     if (playerId === this.hostId && this.players.size > 0) {
       this.hostId = Array.from(this.players.keys())[0];
+      const newHost = this.players.get(this.hostId);
+      if (newHost) {
+        newHost.setReady(true);
+      }
     }
   }
 

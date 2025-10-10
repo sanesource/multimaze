@@ -8,6 +8,7 @@ export default function Lobby() {
   const [isReady, setIsReady] = useState(false);
 
   const isHost = playerId === room.hostId;
+  const allReady = players.length > 0 && players.every(p => p.isReady);
   const currentPlayer = players.find(p => p.playerId === playerId);
 
   const copyRoomCode = () => {
@@ -167,7 +168,7 @@ export default function Lobby() {
               {isHost && (
                 <button
                   onClick={handleStartGame}
-                  disabled={room.playerCount === 0}
+                  disabled={room.playerCount === 0 || !allReady}
                   className="flex-1 px-6 py-3 rounded-lg bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 font-semibold transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
                 >
                   <Play className="w-5 h-5" />
@@ -178,7 +179,7 @@ export default function Lobby() {
 
             {isHost && (
               <p className="text-sm text-blue-200 text-center mt-4">
-                As the host, you can start the game when ready
+                {allReady ? 'All players are ready. You can start the game.' : 'Waiting for all players to ready up.'}
               </p>
             )}
           </div>
