@@ -47,6 +47,11 @@ class Validator {
       }
     }
 
+    // Validate tunnel mode (optional boolean)
+    if (settings.tunnelMode !== undefined && typeof settings.tunnelMode !== 'boolean') {
+      errors.push('Tunnel mode must be a boolean value');
+    }
+
     return {
       isValid: errors.length === 0,
       errors,

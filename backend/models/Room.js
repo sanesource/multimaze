@@ -10,6 +10,7 @@ class Room {
       timerDuration: settings.timerDuration || 300, // seconds
       maxPlayers: Math.min(settings.maxPlayers || 8, 16),
       enableCheckpoints: settings.enableCheckpoints || false,
+      tunnelMode: settings.tunnelMode === true,
     };
     this.status = "waiting"; // 'waiting', 'in-progress', 'finished'
     this.maze = null;

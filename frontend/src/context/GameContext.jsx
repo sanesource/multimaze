@@ -13,6 +13,8 @@ export function GameProvider({ children }) {
   const [gameResults, setGameResults] = useState(null);
   const [error, setError] = useState(null);
   const [playerPositions, setPlayerPositions] = useState({});
+  const [lightningCharges, setLightningCharges] = useState(3);
+  const [lightningActive, setLightningActive] = useState(false);
 
   useEffect(() => {
     socketService.connect();
@@ -35,6 +37,8 @@ export function GameProvider({ children }) {
     socketService.on('game-ended', handleGameEnded);
     socketService.on('player-disconnected', handlePlayerDisconnected);
     socketService.on('error', handleError);
+    socketService.on('lightning-activated', handleLightningActivated);
+    socketService.on('lightning-deactivated', handleLightningDeactivated);
 
     return () => {
       socketService.off('room-updated', handleRoomUpdated);
@@ -52,6 +56,8 @@ export function GameProvider({ children }) {
       socketService.off('game-ended', handleGameEnded);
       socketService.off('player-disconnected', handlePlayerDisconnected);
       socketService.off('error', handleError);
+      socketService.off('lightning-activated', handleLightningActivated);
+      socketService.off('lightning-deactivated', handleLightningDeactivated);
     };
   }, []);
 
@@ -96,6 +102,12 @@ export function GameProvider({ children }) {
       positions[player.playerId] = player.position;
     });
     setPlayerPositions(positions);
+    
+    // Reset lightning state for tunnel mode
+    if (roomData.settings.tunnelMode) {
+      setLightningCharges(3);
+      setLightningActive(false);
+    }
   }, []);
 
   const handlePlayerMoved = useCallback((data) => {
@@ -162,6 +174,17 @@ export function GameProvider({ children }) {
     setError(data.message);
   }, []);
 
+  const handleLightningActivated = useCallback((data) => {
+    setLightningCharges(data.lightningCharges);
+    setLightningActive(true);
+    console.log(`⚡ Lightning activated! ${data.lightningCharges} charges remaining`);
+  }, []);
+
+  const handleLightningDeactivated = useCallback(() => {
+    setLightningActive(false);
+    console.log('Lightning deactivated');
+  }, []);
+
   const createRoom = useCallback((username, settings) => {
     socketService.createRoom(username, settings, (response) => {
       if (response.success) {
@@ -219,6 +242,10 @@ export function GameProvider({ children }) {
     setError(null);
   }, []);
 
+  const useLightning = useCallback(() => {
+    socketService.useLightning();
+  }, []);
+
   const value = {
     gameState,
     room,
@@ -229,6 +256,8 @@ export function GameProvider({ children }) {
     gameResults,
     error,
     playerPositions,
+    lightningCharges,
+    lightningActive,
     createRoom,
     joinRoom,
     leaveRoom,
@@ -236,6 +265,7 @@ export function GameProvider({ children }) {
     startGame,
     restartRoom,
     movePlayer,
+    useLightning,
     clearError,
   };
 
