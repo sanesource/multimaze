@@ -1,6 +1,6 @@
 import { io } from "socket.io-client";
 
-const SOCKET_URL = "/";
+const SOCKET_URL = "";
 
 class SocketService {
   constructor() {
@@ -67,6 +67,10 @@ class SocketService {
 
   movePlayer(direction) {
     this.socket.emit("player-move", { direction });
+  }
+
+  useLightning() {
+    this.socket.emit("use-lightning");
   }
 
   // Event listeners

@@ -32,6 +32,7 @@ class GameHandlers {
     socket.on("start-game", () => this.onStartGame(socket));
     socket.on("restart-room", () => this.onRestartRoom(socket));
     socket.on("player-move", (data) => this.onPlayerMove(socket, data));
+    socket.on("use-lightning", () => this.onUseLightning(socket));
     socket.on("disconnect", () => this.onDisconnect(socket));
   }
 
@@ -77,7 +78,7 @@ class GameHandlers {
       socket.data.playerId = playerId;
       socket.data.roomId = room.roomId;
 
-      console.log(`Room created: ${room.roomId} by ${player.username}`);
+      console.log(`Room created: ${room.roomId} by ${player.username} (Tunnel Mode: ${room.settings.tunnelMode})`);
 
       callback({
         success: true,
@@ -469,6 +470,54 @@ class GameHandlers {
       });
     } catch (error) {
       console.error("Error handling move:", error);
+    }
+  }
+
+  /**
+   * Use lightning charge
+   */
+  onUseLightning(socket) {
+    try {
+      const { playerId, roomId } = socket.data;
+
+      const room = roomManager.getRoom(roomId);
+      if (!room || !room.isGameActive()) return;
+
+      const player = room.getPlayer(playerId);
+      if (!player) return;
+
+      // Check if tunnel mode is enabled
+      if (!room.settings.tunnelMode) {
+        return socket.emit("error", {
+          message: "Lightning is only available in Tunnel Mode",
+        });
+      }
+
+      // Try to use lightning
+      const success = player.useLightning();
+      if (!success) {
+        return socket.emit("error", {
+          message: "No lightning charges remaining",
+        });
+      }
+
+      console.log(`${player.username} used lightning (${player.lightningCharges} charges remaining)`);
+
+      // Emit to player that lightning is activated
+      socket.emit("lightning-activated", {
+        lightningCharges: player.lightningCharges,
+        duration: 2000,
+      });
+
+      // Set timer to deactivate lightning after 2 seconds
+      setTimeout(() => {
+        player.deactivateLightning();
+        socket.emit("lightning-deactivated");
+        console.log(`${player.username} lightning deactivated`);
+      }, 2000);
+
+    } catch (error) {
+      console.error("Error using lightning:", error);
     }
   }
 

@@ -1,18 +1,44 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useGame } from '../context/GameContext';
-import { Clock, Users, Trophy } from 'lucide-react';
+import { Clock, Users, Trophy, Zap } from 'lucide-react';
 
 export default function Game() {
-  const { maze, playerId, players, playerPositions, timer, movePlayer } = useGame();
+  const { maze, playerId, players, playerPositions, timer, movePlayer, room, lightningCharges, lightningActive, useLightning } = useGame();
   const canvasRef = useRef(null);
   const [cellSize, setCellSize] = useState(50);
   const animationFrameRef = useRef(null);
   const playerAnimationsRef = useRef({});
   const particlesRef = useRef([]);
   const [activeKeys, setActiveKeys] = useState(new Set());
+  const [lightningCountdown, setLightningCountdown] = useState(0);
+  const lightningTimerRef = useRef(null);
   
   const currentPlayer = players.find(p => p.playerId === playerId);
   const currentPosition = playerPositions[playerId] || currentPlayer?.position || { x: 0, y: 0 };
+
+  // Lightning countdown timer
+  useEffect(() => {
+    if (lightningActive) {
+      setLightningCountdown(2);
+      const interval = setInterval(() => {
+        setLightningCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      
+      lightningTimerRef.current = interval;
+      return () => clearInterval(interval);
+    } else {
+      setLightningCountdown(0);
+      if (lightningTimerRef.current) {
+        clearInterval(lightningTimerRef.current);
+      }
+    }
+  }, [lightningActive]);
 
   // Handle keyboard input with visual feedback
   useEffect(() => {
@@ -34,6 +60,14 @@ export default function Game() {
         e.preventDefault();
         setActiveKeys(prev => new Set(prev).add(direction));
         movePlayer(direction);
+      }
+      
+      // Handle spacebar for lightning in tunnel mode
+      if (key === ' ' && room?.settings?.tunnelMode) {
+        e.preventDefault();
+        if (lightningCharges > 0 && !lightningActive) {
+          useLightning();
+        }
       }
     };
 
@@ -536,6 +570,67 @@ export default function Game() {
         return true;
       });
 
+      // Draw fog-of-war for tunnel mode (BEFORE drawing players so players are visible)
+      if (room?.settings?.tunnelMode && !lightningActive) {
+        // Calculate visible area around current player
+        const visionRadius = 10; // cells (increased from 6.5 to show more)
+        const centerX = currentPosition.x * cellSize + cellSize / 2;
+        const centerY = currentPosition.y * cellSize + cellSize / 2;
+        const radiusPixels = visionRadius * cellSize;
+        
+        ctx.save();
+        
+        // Create radial gradient for fog (transparent at center, dark at edges)
+        const fogGradient = ctx.createRadialGradient(
+          centerX, centerY, 0,
+          centerX, centerY, radiusPixels
+        );
+        fogGradient.addColorStop(0, 'rgba(0, 0, 0, 0)');      // Fully transparent center
+        fogGradient.addColorStop(0.5, 'rgba(0, 0, 0, 0.2)');   // Light fog
+        fogGradient.addColorStop(0.75, 'rgba(0, 0, 0, 0.6)');   // Medium fog
+        fogGradient.addColorStop(0.9, 'rgba(0, 0, 0, 0.85)');  // Heavy fog
+        fogGradient.addColorStop(1, 'rgba(0, 0, 0, 0.95)');    // Nearly black at edge
+        
+        // Draw the gradient over entire canvas
+        ctx.fillStyle = fogGradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Fill everything outside the gradient circle with solid black
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.95)';
+        // Left
+        if (centerX - radiusPixels > 0) {
+          ctx.fillRect(0, 0, centerX - radiusPixels, canvas.height);
+        }
+        // Right
+        if (centerX + radiusPixels < canvas.width) {
+          ctx.fillRect(centerX + radiusPixels, 0, canvas.width - (centerX + radiusPixels), canvas.height);
+        }
+        // Top
+        if (centerY - radiusPixels > 0) {
+          ctx.fillRect(0, 0, canvas.width, centerY - radiusPixels);
+        }
+        // Bottom
+        if (centerY + radiusPixels < canvas.height) {
+          ctx.fillRect(0, centerY + radiusPixels, canvas.width, canvas.height - (centerY + radiusPixels));
+        }
+        
+        // Add warm candle glow overlay
+        const candleGlow = ctx.createRadialGradient(
+          centerX, centerY, 0,
+          centerX, centerY, radiusPixels * 0.6
+        );
+        candleGlow.addColorStop(0, 'rgba(255, 200, 100, 0.35)');
+        candleGlow.addColorStop(0.4, 'rgba(255, 200, 100, 0.18)');
+        candleGlow.addColorStop(0.7, 'rgba(255, 180, 80, 0.08)');
+        candleGlow.addColorStop(1, 'rgba(255, 160, 60, 0)');
+        ctx.fillStyle = candleGlow;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radiusPixels * 0.6, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.restore();
+      }
+
       // Draw all players with smooth animation
       const playerColors = [
         '#3b82f6', // blue
@@ -657,7 +752,7 @@ export default function Game() {
         cancelAnimationFrame(animationId);
       }
     };
-  }, [maze, players, playerId, cellSize]);
+  }, [maze, players, playerId, cellSize, room, lightningActive, currentPosition]);
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -754,13 +849,28 @@ export default function Game() {
                 <div className="text-xs text-blue-200">Finished</div>
               </div>
             </div>
+            {room?.settings?.tunnelMode && (
+              <div className="flex items-center gap-2">
+                <Zap className={`w-6 h-6 ${lightningActive ? 'text-white animate-pulse' : 'text-yellow-400'}`} />
+                <div>
+                  <div className={`text-xl font-bold ${lightningActive ? 'text-white' : ''}`}>
+                    {lightningActive ? lightningCountdown : lightningCharges}
+                  </div>
+                  <div className="text-xs text-blue-200">
+                    {lightningActive ? 'Active' : 'Lightning'}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* Game Canvas - Full Height */}
       <div className="flex-1 flex items-center justify-center p-2 overflow-hidden">
-        <div className="glass p-3 rounded-xl flex flex-col items-center justify-center max-h-full">
+        <div className={`glass p-3 rounded-xl flex flex-col items-center justify-center max-h-full transition-all ${
+          lightningActive ? 'ring-4 ring-yellow-400 shadow-lg shadow-yellow-400/50' : ''
+        }`}>
           <canvas
             ref={canvasRef}
             className="mx-auto"
@@ -780,6 +890,15 @@ export default function Game() {
               →
             </kbd>{' '}
             <span className="text-xs">or WASD</span>
+            {room?.settings?.tunnelMode && (
+              <span>
+                {' • Press '}
+                <kbd className="px-2 py-1 glass-dark rounded bg-yellow-500/30">
+                  Space
+                </kbd>
+                {' for Lightning ⚡'}
+              </span>
+            )}
           </div>
         </div>
       </div>

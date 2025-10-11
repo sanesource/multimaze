@@ -14,6 +14,9 @@ class Player {
     this.joinedAt = Date.now();
     this.checkpointsReached = []; // Array of checkpoint orders reached
     this.nextCheckpoint = 1; // The next checkpoint order to reach
+    this.lightningCharges = 3;
+    this.lightningActive = false;
+    this.lightningEndTime = null;
   }
 
   setPosition(x, y) {
@@ -62,6 +65,21 @@ class Player {
     return this.checkpointsReached.length >= 3;
   }
 
+  useLightning() {
+    if (this.lightningCharges > 0) {
+      this.lightningCharges--;
+      this.lightningActive = true;
+      this.lightningEndTime = Date.now() + 2000;
+      return true;
+    }
+    return false;
+  }
+
+  deactivateLightning() {
+    this.lightningActive = false;
+    this.lightningEndTime = null;
+  }
+
   reset() {
     // Reset player to lobby state
     this.position = { x: 0, y: 0 };
@@ -73,6 +91,9 @@ class Player {
     this.hasFinished = false;
     this.checkpointsReached = [];
     this.nextCheckpoint = 1;
+    this.lightningCharges = 3;
+    this.lightningActive = false;
+    this.lightningEndTime = null;
   }
 
   toJSON() {
@@ -89,6 +110,8 @@ class Player {
       hasFinished: this.hasFinished,
       checkpointsReached: this.checkpointsReached,
       nextCheckpoint: this.nextCheckpoint,
+      lightningCharges: this.lightningCharges,
+      lightningActive: this.lightningActive,
     };
   }
 }

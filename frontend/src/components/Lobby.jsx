@@ -103,6 +103,12 @@ export default function Lobby() {
                     {room.playerCount}/{room.settings.maxPlayers}
                   </span>
                 </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-blue-200">Tunnel Mode:</span>
+                  <span className={`font-bold ${room.settings.tunnelMode ? 'text-yellow-400' : 'text-gray-400'}`}>
+                    {room.settings.tunnelMode ? '🕯️ Enabled' : 'Disabled'}
+                  </span>
+                </div>
               </div>
             </div>
           </div>

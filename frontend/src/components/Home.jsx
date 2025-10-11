@@ -12,6 +12,7 @@ export default function Home() {
   const [timerDuration, setTimerDuration] = useState(300);
   const [maxPlayers, setMaxPlayers] = useState(4);
   const [enableCheckpoints, setEnableCheckpoints] = useState(false);
+  const [tunnelMode, setTunnelMode] = useState(false);
 
   const handleCreateRoom = (e) => {
     e.preventDefault();
@@ -22,6 +23,7 @@ export default function Home() {
       timerDuration: parseInt(timerDuration),
       maxPlayers: parseInt(maxPlayers),
       enableCheckpoints,
+      tunnelMode,
     });
   };
 
@@ -162,6 +164,22 @@ export default function Home() {
                 </label>
               </div>
 
+              <div className="flex items-center gap-3 p-4 glass-dark rounded-lg">
+                <input
+                  type="checkbox"
+                  id="tunnelMode"
+                  checked={tunnelMode}
+                  onChange={(e) => setTunnelMode(e.target.checked)}
+                  className="w-5 h-5 rounded border-white/20 bg-black/30 text-blue-500 focus:ring-2 focus:ring-blue-400"
+                />
+                <label htmlFor="tunnelMode" className="text-sm font-medium cursor-pointer flex-1">
+                  <span className="text-yellow-400">🕯️ Tunnel Mode</span>
+                  <span className="block text-xs text-blue-200 mt-1">
+                    Limited vision with candle + 3 lightning charges (Spacebar)
+                  </span>
+                </label>
+              </div>
+
               <div className="flex gap-3 pt-4">
                 <button
                   type="button"
@@ -255,4 +273,3 @@ export default function Home() {
     </div>
   );
 }
-
