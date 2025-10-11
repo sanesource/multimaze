@@ -105,6 +105,15 @@ export function GameProvider({ children }) {
 
   const handlePlayerFinished = useCallback((data) => {
     console.log(`${data.username} finished in ${data.completionTime}s!`);
+    
+    // Update the player's hasFinished status
+    setPlayers(prevPlayers => 
+      prevPlayers.map(player => 
+        player.playerId === data.playerId 
+          ? { ...player, hasFinished: true, completionTime: data.completionTime }
+          : player
+      )
+    );
   }, []);
 
   const handleWinnerAnnounced = useCallback((data) => {
