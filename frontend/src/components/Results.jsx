@@ -53,8 +53,8 @@ export default function Results() {
           </div>
         )}
 
-        {/* Team Victory Announcement */}
-        {isTeamMode && (
+        {/* Team Victory Announcement - Only show when there's a winning team */}
+        {isTeamMode && gameResults.winningTeam && (
           <div className="text-center mb-8 animate-fade-in">
             <Trophy className="w-20 h-20 text-yellow-400 mx-auto mb-4 animate-bounce-slow" />
             <h1 className={`text-6xl font-bold mb-4 bg-gradient-to-r ${

@@ -18,6 +18,9 @@ class Player {
     this.lightningActive = false;
     this.lightningEndTime = null;
     this.team = null; // 'A', 'B', or null for team mode
+    // Power-ups (single-player only)
+    this.timeFreezeCharges = 1;
+    this.frozenUntil = null; // Timestamp when freeze ends, or null
   }
 
   setPosition(x, y) {
@@ -85,6 +88,31 @@ class Player {
     this.lightningEndTime = null;
   }
 
+  useTimeFreeze() {
+    if (this.timeFreezeCharges > 0) {
+      this.timeFreezeCharges--;
+      return true;
+    }
+    return false;
+  }
+
+  freeze(duration) {
+    this.frozenUntil = Date.now() + duration;
+  }
+
+  unfreeze() {
+    this.frozenUntil = null;
+  }
+
+  isFrozen() {
+    if (this.frozenUntil === null) return false;
+    if (Date.now() >= this.frozenUntil) {
+      this.unfreeze();
+      return false;
+    }
+    return true;
+  }
+
   reset() {
     // Reset player to lobby state
     this.position = { x: 0, y: 0 };
@@ -100,6 +128,8 @@ class Player {
     this.lightningActive = false;
     this.lightningEndTime = null;
     this.team = null;
+    this.timeFreezeCharges = 1;
+    this.frozenUntil = null;
   }
 
   toJSON() {
@@ -119,6 +149,8 @@ class Player {
       lightningCharges: this.lightningCharges,
       lightningActive: this.lightningActive,
       team: this.team,
+      timeFreezeCharges: this.timeFreezeCharges,
+      frozenUntil: this.frozenUntil,
     };
   }
 }

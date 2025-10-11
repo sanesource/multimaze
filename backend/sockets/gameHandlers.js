@@ -34,6 +34,7 @@ class GameHandlers {
     socket.on("restart-room", () => this.onRestartRoom(socket));
     socket.on("player-move", (data) => this.onPlayerMove(socket, data));
     socket.on("use-lightning", () => this.onUseLightning(socket));
+    socket.on("use-time-freeze", () => this.onUseTimeFreeze(socket));
     socket.on("disconnect", () => this.onDisconnect(socket));
   }
 
@@ -442,6 +443,11 @@ class GameHandlers {
       const player = room.getPlayer(playerId);
       if (!player) return;
 
+      // Check if player is frozen
+      if (player.isFrozen()) {
+        return; // Player cannot move while frozen
+      }
+
       // Calculate new position
       const { x, y } = player.position;
       let newX = x;
@@ -655,6 +661,82 @@ class GameHandlers {
 
     } catch (error) {
       console.error("Error using lightning:", error);
+    }
+  }
+
+  /**
+   * Use time freeze power-up
+   */
+  onUseTimeFreeze(socket) {
+    try {
+      const { playerId, roomId } = socket.data;
+
+      const room = roomManager.getRoom(roomId);
+      if (!room || !room.isGameActive()) return;
+
+      const player = room.getPlayer(playerId);
+      if (!player) return;
+
+      // Check if team mode is disabled (power-ups only in single-player)
+      if (room.settings.teamMode) {
+        return socket.emit("error", {
+          message: "Power-ups are only available in single-player mode",
+        });
+      }
+
+      // Try to use time freeze
+      const success = player.useTimeFreeze();
+      if (!success) {
+        return socket.emit("error", {
+          message: "No time freeze charges remaining",
+        });
+      }
+
+      console.log(`${player.username} activated time freeze (${player.timeFreezeCharges} charges remaining)`);
+
+      // Emit to activating player
+      socket.emit("time-freeze-activated", {
+        timeFreezeCharges: player.timeFreezeCharges,
+        duration: 3000,
+      });
+
+      // Freeze all other players
+      const allPlayers = room.getAllPlayers();
+      allPlayers.forEach((otherPlayer) => {
+        if (otherPlayer.playerId !== playerId) {
+          // Freeze the opponent
+          otherPlayer.freeze(3000);
+          
+          // Notify the frozen player
+          const otherSocket = this.io.sockets.sockets.get(otherPlayer.socketId);
+          if (otherSocket) {
+            otherSocket.emit("player-frozen", {
+              duration: 3000,
+              freezerUsername: player.username,
+            });
+            
+            console.log(`${otherPlayer.username} frozen by ${player.username}`);
+          }
+        }
+      });
+
+      // Set timer to unfreeze all players and notify them
+      setTimeout(() => {
+        allPlayers.forEach((otherPlayer) => {
+          if (otherPlayer.playerId !== playerId) {
+            otherPlayer.unfreeze();
+            
+            const otherSocket = this.io.sockets.sockets.get(otherPlayer.socketId);
+            if (otherSocket) {
+              otherSocket.emit("player-unfrozen");
+              console.log(`${otherPlayer.username} unfrozen`);
+            }
+          }
+        });
+      }, 3000);
+
+    } catch (error) {
+      console.error("Error using time freeze:", error);
     }
   }
 

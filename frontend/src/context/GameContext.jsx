@@ -15,6 +15,9 @@ export function GameProvider({ children }) {
   const [playerPositions, setPlayerPositions] = useState({});
   const [lightningCharges, setLightningCharges] = useState(3);
   const [lightningActive, setLightningActive] = useState(false);
+  const [timeFreezeCharges, setTimeFreezeCharges] = useState(1);
+  const [isFrozen, setIsFrozen] = useState(false);
+  const [freezerUsername, setFreezerUsername] = useState('');
 
   useEffect(() => {
     socketService.connect();
@@ -41,6 +44,9 @@ export function GameProvider({ children }) {
     socketService.on('error', handleError);
     socketService.on('lightning-activated', handleLightningActivated);
     socketService.on('lightning-deactivated', handleLightningDeactivated);
+    socketService.on('time-freeze-activated', handleTimeFreezeActivated);
+    socketService.on('player-frozen', handlePlayerFrozen);
+    socketService.on('player-unfrozen', handlePlayerUnfrozen);
 
     return () => {
       socketService.off('room-updated', handleRoomUpdated);
@@ -62,6 +68,9 @@ export function GameProvider({ children }) {
       socketService.off('error', handleError);
       socketService.off('lightning-activated', handleLightningActivated);
       socketService.off('lightning-deactivated', handleLightningDeactivated);
+      socketService.off('time-freeze-activated', handleTimeFreezeActivated);
+      socketService.off('player-frozen', handlePlayerFrozen);
+      socketService.off('player-unfrozen', handlePlayerUnfrozen);
     };
   }, []);
 
@@ -111,6 +120,12 @@ export function GameProvider({ children }) {
     if (roomData.settings.tunnelMode) {
       setLightningCharges(3);
       setLightningActive(false);
+    }
+    
+    // Reset power-ups for single-player mode
+    if (!roomData.settings.teamMode) {
+      setTimeFreezeCharges(1);
+      setIsFrozen(false);
     }
   }, []);
 
@@ -208,6 +223,23 @@ export function GameProvider({ children }) {
     console.log('Lightning deactivated');
   }, []);
 
+  const handleTimeFreezeActivated = useCallback((data) => {
+    setTimeFreezeCharges(data.timeFreezeCharges);
+    console.log(`❄️ Time Freeze activated! ${data.timeFreezeCharges} charges remaining`);
+  }, []);
+
+  const handlePlayerFrozen = useCallback((data) => {
+    setIsFrozen(true);
+    setFreezerUsername(data.freezerUsername);
+    console.log(`🧊 You are frozen by ${data.freezerUsername} for ${data.duration / 1000} seconds!`);
+  }, []);
+
+  const handlePlayerUnfrozen = useCallback(() => {
+    setIsFrozen(false);
+    setFreezerUsername('');
+    console.log('You are unfrozen!');
+  }, []);
+
   const createRoom = useCallback((username, settings) => {
     socketService.createRoom(username, settings, (response) => {
       if (response.success) {
@@ -273,6 +305,10 @@ export function GameProvider({ children }) {
     socketService.useLightning();
   }, []);
 
+  const useTimeFreeze = useCallback(() => {
+    socketService.useTimeFreeze();
+  }, []);
+
   const value = {
     gameState,
     room,
@@ -285,6 +321,9 @@ export function GameProvider({ children }) {
     playerPositions,
     lightningCharges,
     lightningActive,
+    timeFreezeCharges,
+    isFrozen,
+    freezerUsername,
     createRoom,
     joinRoom,
     leaveRoom,
@@ -294,6 +333,7 @@ export function GameProvider({ children }) {
     restartRoom,
     movePlayer,
     useLightning,
+    useTimeFreeze,
     clearError,
   };
 

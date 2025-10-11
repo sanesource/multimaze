@@ -1,6 +1,6 @@
 import { io } from "socket.io-client";
 
-const SOCKET_URL = "";
+const SOCKET_URL = "http://localhost:3000";
 
 class SocketService {
   constructor() {
@@ -75,6 +75,10 @@ class SocketService {
 
   useLightning() {
     this.socket.emit("use-lightning");
+  }
+
+  useTimeFreeze() {
+    this.socket.emit("use-time-freeze");
   }
 
   // Event listeners

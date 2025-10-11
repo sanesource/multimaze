@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useGame } from '../context/GameContext';
-import { Clock, Users, Trophy, Zap } from 'lucide-react';
+import { Clock, Users, Trophy, Zap, Snowflake } from 'lucide-react';
 
 export default function Game() {
-  const { maze, playerId, players, playerPositions, timer, movePlayer, room, lightningCharges, lightningActive, useLightning } = useGame();
+  const { maze, playerId, players, playerPositions, timer, movePlayer, room, lightningCharges, lightningActive, useLightning, timeFreezeCharges, useTimeFreeze, isFrozen, freezerUsername } = useGame();
   const canvasRef = useRef(null);
   const [cellSize, setCellSize] = useState(50);
   const animationFrameRef = useRef(null);
@@ -12,6 +12,7 @@ export default function Game() {
   const [activeKeys, setActiveKeys] = useState(new Set());
   const [lightningCountdown, setLightningCountdown] = useState(0);
   const lightningTimerRef = useRef(null);
+  const [snowflakes, setSnowflakes] = useState([]);
   // Continuous movement state/refs
   const moveDirectionRef = useRef(null);
   const lastMoveTimestampRef = useRef(0);
@@ -100,10 +101,58 @@ export default function Game() {
     }
   }, [lightningActive]);
 
+  // Snowflake animation when frozen
+  useEffect(() => {
+    if (isFrozen) {
+      // Create initial snowflakes
+      const initialSnowflakes = [];
+      for (let i = 0; i < 50; i++) {
+        initialSnowflakes.push({
+          id: i,
+          x: Math.random() * 100,
+          y: Math.random() * -100,
+          size: Math.random() * 3 + 2,
+          speed: Math.random() * 2 + 1,
+          drift: Math.random() * 2 - 1,
+        });
+      }
+      setSnowflakes(initialSnowflakes);
+
+      // Animate snowflakes
+      const animationInterval = setInterval(() => {
+        setSnowflakes(prev => 
+          prev.map(flake => ({
+            ...flake,
+            y: flake.y > 100 ? -10 : flake.y + flake.speed,
+            x: flake.x + flake.drift * 0.1,
+          }))
+        );
+      }, 50);
+
+      return () => clearInterval(animationInterval);
+    } else {
+      setSnowflakes([]);
+    }
+  }, [isFrozen]);
+
   // Handle keyboard input with visual feedback + set continuous direction
   useEffect(() => {
     const handleKeyDown = (e) => {
-      const key = e.key.toLowerCase();
+      const key = e.key;
+      const keyLower = key.toLowerCase();
+      
+      // Check for power-ups first (only in single-player mode)
+      if (!room?.settings?.teamMode) {
+        // Handle F key for time freeze
+        if (keyLower === 'f') {
+          e.preventDefault();
+          if (timeFreezeCharges > 0) {
+            useTimeFreeze();
+          }
+          return;
+        }
+      }
+      
       const keyMap = {
         'arrowup': 'up',
         'w': 'up',
@@ -115,7 +164,7 @@ export default function Game() {
         'd': 'right',
       };
 
-      const direction = keyMap[key];
+      const direction = keyMap[keyLower];
       if (direction) {
         e.preventDefault();
         setActiveKeys(prev => new Set(prev).add(direction));
@@ -844,7 +893,7 @@ export default function Game() {
         cancelAnimationFrame(animationId);
       }
     };
-  }, [maze, players, playerId, cellSize, room, lightningActive, currentPosition]);
+  }, [maze, players, playerId, cellSize, room, lightningActive, isFrozen, currentPosition]);
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -954,18 +1003,64 @@ export default function Game() {
                 </div>
               </div>
             )}
+            {!room?.settings?.teamMode && (
+              <div className="flex items-center gap-2">
+                <Snowflake className={`w-6 h-6 ${timeFreezeCharges > 0 ? 'text-cyan-400' : 'text-gray-500'}`} />
+                <div>
+                  <div className={`text-xl font-bold ${timeFreezeCharges > 0 ? '' : 'text-gray-500'}`}>
+                    {timeFreezeCharges}
+                  </div>
+                  <div className="text-xs text-blue-200">
+                    Freeze
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* Game Canvas - Full Height */}
-      <div className="flex-1 flex items-center justify-center p-2 overflow-hidden">
+      <div className="flex-1 flex items-center justify-center p-2 overflow-hidden relative">
+        {isFrozen && (
+          <>
+            {/* Falling snowflakes */}
+            <div className="absolute inset-0 z-40 pointer-events-none overflow-hidden">
+              {snowflakes.map(flake => (
+                <div
+                  key={flake.id}
+                  className="absolute text-white opacity-80"
+                  style={{
+                    left: `${flake.x}%`,
+                    top: `${flake.y}%`,
+                    fontSize: `${flake.size * 4}px`,
+                  }}
+                >
+                  ❄
+                </div>
+              ))}
+            </div>
+            {/* Freeze message overlay */}
+            <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none bg-black/30">
+              <div className="glass p-6 rounded-2xl text-center">
+                <div className="text-5xl font-bold text-cyan-300 mb-3 animate-pulse">
+                  ❄️ FROZEN ❄️
+                </div>
+                <div className="text-xl text-white font-medium">
+                  {freezerUsername} has chosen to freeze you!
+                </div>
+              </div>
+            </div>
+          </>
+        )}
         <div className={`glass p-3 rounded-xl flex flex-col items-center justify-center max-h-full transition-all ${
           lightningActive ? 'ring-4 ring-yellow-400 shadow-lg shadow-yellow-400/50' : ''
+        } ${
+          isFrozen ? 'opacity-70' : ''
         }`}>
           <canvas
             ref={canvasRef}
-            className="mx-auto"
+            className={`mx-auto transition-all ${isFrozen ? 'filter blur-sm' : ''}`}
             style={{ imageRendering: 'pixelated' }}
           />
           <div className="mt-2 text-center text-sm text-blue-200">
@@ -989,6 +1084,15 @@ export default function Game() {
                   Space
                 </kbd>
                 {' for Lightning ⚡'}
+              </span>
+            )}
+            {!room?.settings?.teamMode && (
+              <span>
+                {' • Press '}
+                <kbd className="px-2 py-1 glass-dark rounded bg-cyan-500/30">
+                  F
+                </kbd>
+                {' for Freeze ❄️'}
               </span>
             )}
           </div>
