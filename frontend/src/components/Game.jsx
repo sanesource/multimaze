@@ -467,10 +467,20 @@ export default function Game() {
           const cpWidth = cellSize;
           const cpHeight = cellSize;
           
-          // Check if this checkpoint has been reached by current player
+          // Check if this checkpoint has been reached
           const currentPlayerData = players.find(p => p.playerId === playerId);
-          const isReached = currentPlayerData?.checkpointsReached?.includes(checkpoint.order) || false;
-          const isNext = currentPlayerData?.nextCheckpoint === checkpoint.order;
+          let isReached, isNext;
+          
+          if (room?.settings?.teamMode && currentPlayerData?.team) {
+            // Team mode: check if team has reached checkpoint
+            isReached = room.teamCheckpoints?.[currentPlayerData.team]?.includes(checkpoint.order) || false;
+            const teamCheckpoints = room.teamCheckpoints?.[currentPlayerData.team] || [];
+            isNext = !isReached && teamCheckpoints.length === checkpoint.order - 1;
+          } else {
+            // Individual mode: check player's own checkpoints
+            isReached = currentPlayerData?.checkpointsReached?.includes(checkpoint.order) || false;
+            isNext = currentPlayerData?.nextCheckpoint === checkpoint.order;
+          }
           
           // Pulsing animation for next checkpoint
           const cpPulse = isNext ? Math.sin(time * 3) * 0.5 + 0.5 : 0.3;
@@ -706,16 +716,24 @@ export default function Game() {
       }
 
       // Draw all players with smooth animation
-      const playerColors = [
-        '#3b82f6', // blue
-        '#ef4444', // red
-        '#10b981', // green
-        '#a855f7', // purple
-        '#f59e0b', // orange
-        '#ec4899', // pink
-        '#06b6d4', // cyan
-        '#84cc16', // lime
-      ];
+      const getPlayerColor = (player, index) => {
+        // In team mode, use team colors
+        if (room?.settings?.teamMode) {
+          return player.team === 'A' ? '#3b82f6' : '#ef4444'; // Blue for Team A, Red for Team B
+        }
+        // In normal mode, use varied colors
+        const playerColors = [
+          '#3b82f6', // blue
+          '#ef4444', // red
+          '#10b981', // green
+          '#a855f7', // purple
+          '#f59e0b', // orange
+          '#ec4899', // pink
+          '#06b6d4', // cyan
+          '#84cc16', // lime
+        ];
+        return playerColors[index % playerColors.length];
+      };
 
       players.forEach((player, index) => {
         const anim = playerAnimationsRef.current[player.playerId];
@@ -740,7 +758,7 @@ export default function Game() {
           anim.scale = Math.max(1, anim.scale - 0.02);
         }
 
-        const color = playerColors[index % playerColors.length];
+        const color = getPlayerColor(player, index);
         const centerX = interpolatedX * cellSize + cellSize / 2;
         const centerY = interpolatedY * cellSize + cellSize / 2;
         const radius = cellSize * 0.35 * anim.scale;

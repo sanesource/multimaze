@@ -30,8 +30,10 @@ export function GameProvider({ children }) {
     socketService.on('game-started', handleGameStarted);
     socketService.on('player-moved', handlePlayerMoved);
     socketService.on('checkpoint-reached', handleCheckpointReached);
+    socketService.on('team-checkpoint-reached', handleTeamCheckpointReached);
     socketService.on('player-finished', handlePlayerFinished);
     socketService.on('winner-announced', handleWinnerAnnounced);
+    socketService.on('team-victory', handleTeamVictory);
     socketService.on('timer-update', handleTimerUpdate);
     socketService.on('timer-warning', handleTimerWarning);
     socketService.on('game-ended', handleGameEnded);
@@ -49,8 +51,10 @@ export function GameProvider({ children }) {
       socketService.off('game-started', handleGameStarted);
       socketService.off('player-moved', handlePlayerMoved);
       socketService.off('checkpoint-reached', handleCheckpointReached);
+      socketService.off('team-checkpoint-reached', handleTeamCheckpointReached);
       socketService.off('player-finished', handlePlayerFinished);
       socketService.off('winner-announced', handleWinnerAnnounced);
+      socketService.off('team-victory', handleTeamVictory);
       socketService.off('timer-update', handleTimerUpdate);
       socketService.off('timer-warning', handleTimerWarning);
       socketService.off('game-ended', handleGameEnded);
@@ -136,6 +140,21 @@ export function GameProvider({ children }) {
     );
   }, []);
 
+  const handleTeamCheckpointReached = useCallback((data) => {
+    console.log(`Team ${data.team} reached checkpoint ${data.checkpointOrder}! (${data.username})`);
+    
+    // Update room data to reflect team checkpoint progress
+    setRoom(prevRoom => ({
+      ...prevRoom,
+      teamCheckpoints: {
+        ...prevRoom.teamCheckpoints,
+        [data.team]: prevRoom.teamCheckpoints?.[data.team] 
+          ? [...prevRoom.teamCheckpoints[data.team], data.checkpointOrder].sort((a, b) => a - b)
+          : [data.checkpointOrder]
+      }
+    }));
+  }, []);
+
   const handlePlayerFinished = useCallback((data) => {
     console.log(`${data.username} finished in ${data.completionTime}s!`);
     
@@ -151,6 +170,10 @@ export function GameProvider({ children }) {
 
   const handleWinnerAnnounced = useCallback((data) => {
     console.log(`🏆 ${data.username} wins!`);
+  }, []);
+
+  const handleTeamVictory = useCallback((data) => {
+    console.log(`🏆 Team ${data.winningTeam} wins!`);
   }, []);
 
   const handleTimerUpdate = useCallback((data) => {
@@ -226,6 +249,10 @@ export function GameProvider({ children }) {
     socketService.setReady(isReady);
   }, []);
 
+  const selectTeam = useCallback((team) => {
+    socketService.selectTeam(team);
+  }, []);
+
   const startGame = useCallback(() => {
     socketService.startGame();
   }, []);
@@ -262,6 +289,7 @@ export function GameProvider({ children }) {
     joinRoom,
     leaveRoom,
     toggleReady,
+    selectTeam,
     startGame,
     restartRoom,
     movePlayer,

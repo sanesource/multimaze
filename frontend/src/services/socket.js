@@ -57,6 +57,10 @@ class SocketService {
     this.socket.emit("player-ready", { isReady });
   }
 
+  selectTeam(team) {
+    this.socket.emit("select-team", { team });
+  }
+
   startGame() {
     this.socket.emit("start-game");
   }

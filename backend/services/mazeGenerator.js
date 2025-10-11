@@ -18,9 +18,10 @@ class MazeGenerator {
    * @param {string} difficulty - 'easy', 'medium', or 'hard'
    * @param {number} maxPlayers - Maximum number of players
    * @param {boolean} enableCheckpoints - Whether to add checkpoints
+   * @param {number} checkpointCount - Number of checkpoints to generate (defaults to 3)
    * @returns {Maze}
    */
-  generate(difficulty, maxPlayers, enableCheckpoints = false) {
+  generate(difficulty, maxPlayers, enableCheckpoints = false, checkpointCount = 3) {
     const sizeMap = {
       easy: 15,
       medium: 25,
@@ -63,7 +64,8 @@ class MazeGenerator {
         grid,
         size,
         startPositions[0],
-        endpoint
+        endpoint,
+        checkpointCount
       );
       maze.setCheckpoints(checkpoints);
     }
@@ -284,22 +286,25 @@ class MazeGenerator {
   }
 
   /**
-   * Generate 3 checkpoints spread throughout the maze
-   * Checkpoints are placed at roughly 1/4, 1/2, and 3/4 of the way to the endpoint
+   * Generate checkpoints spread throughout the maze
+   * Checkpoints are distributed evenly based on distance from start
+   * @param {number} count - Number of checkpoints to generate
    */
-  generateCheckpoints(grid, size, start, endpoint) {
+  generateCheckpoints(grid, size, start, endpoint, count = 3) {
     const checkpoints = [];
 
-    // Divide the maze into regions based on distance from start
-    // Checkpoint 1: Early area (around 1/4 of the way)
-    // Checkpoint 2: Middle area (around 1/2 of the way)
-    // Checkpoint 3: Late area (around 3/4 of the way)
-
-    const regions = [
-      { minDist: size * 0.15, maxDist: size * 0.35, order: 1 },
-      { minDist: size * 0.4, maxDist: size * 0.6, order: 2 },
-      { minDist: size * 0.65, maxDist: size * 0.85, order: 3 },
-    ];
+    // Dynamically divide the maze into regions based on checkpoint count
+    // Distribute checkpoints evenly from start to endpoint
+    const regions = [];
+    for (let i = 1; i <= count; i++) {
+      const progress = i / (count + 1); // e.g., for 3: 0.25, 0.5, 0.75
+      const rangeSize = 0.1; // +/- 10% around the target
+      regions.push({
+        minDist: size * Math.max(0.1, progress - rangeSize),
+        maxDist: size * Math.min(0.9, progress + rangeSize),
+        order: i,
+      });
+    }
 
     for (const region of regions) {
       const checkpoint = this.findCheckpointInRegion(

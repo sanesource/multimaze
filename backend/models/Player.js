@@ -17,6 +17,7 @@ class Player {
     this.lightningCharges = 3;
     this.lightningActive = false;
     this.lightningEndTime = null;
+    this.team = null; // 'A', 'B', or null for team mode
   }
 
   setPosition(x, y) {
@@ -33,6 +34,10 @@ class Player {
 
   setConnected(connected) {
     this.isConnected = connected;
+  }
+
+  setTeam(team) {
+    this.team = team;
   }
 
   finish(time) {
@@ -94,6 +99,7 @@ class Player {
     this.lightningCharges = 3;
     this.lightningActive = false;
     this.lightningEndTime = null;
+    this.team = null;
   }
 
   toJSON() {
@@ -112,6 +118,7 @@ class Player {
       nextCheckpoint: this.nextCheckpoint,
       lightningCharges: this.lightningCharges,
       lightningActive: this.lightningActive,
+      team: this.team,
     };
   }
 }
