@@ -17,9 +17,10 @@ class MazeGenerator {
    * Generate a maze based on difficulty
    * @param {string} difficulty - 'easy', 'medium', or 'hard'
    * @param {number} maxPlayers - Maximum number of players
+   * @param {boolean} enableCheckpoints - Whether to add checkpoints
    * @returns {Maze}
    */
-  generate(difficulty, maxPlayers) {
+  generate(difficulty, maxPlayers, enableCheckpoints = false) {
     const sizeMap = {
       easy: 15,
       medium: 25,
@@ -55,6 +56,17 @@ class MazeGenerator {
     // Set endpoint (bottom-right area)
     const endpoint = this.findEndpoint(grid, size);
     maze.setEndpoint(endpoint);
+
+    // Generate checkpoints if enabled
+    if (enableCheckpoints) {
+      const checkpoints = this.generateCheckpoints(
+        grid,
+        size,
+        startPositions[0],
+        endpoint
+      );
+      maze.setCheckpoints(checkpoints);
+    }
 
     return maze;
   }
@@ -269,6 +281,97 @@ class MazeGenerator {
     }
 
     return { x: endX, y: endY };
+  }
+
+  /**
+   * Generate 3 checkpoints spread throughout the maze
+   * Checkpoints are placed at roughly 1/4, 1/2, and 3/4 of the way to the endpoint
+   */
+  generateCheckpoints(grid, size, start, endpoint) {
+    const checkpoints = [];
+
+    // Divide the maze into regions based on distance from start
+    // Checkpoint 1: Early area (around 1/4 of the way)
+    // Checkpoint 2: Middle area (around 1/2 of the way)
+    // Checkpoint 3: Late area (around 3/4 of the way)
+
+    const regions = [
+      { minDist: size * 0.15, maxDist: size * 0.35, order: 1 },
+      { minDist: size * 0.4, maxDist: size * 0.6, order: 2 },
+      { minDist: size * 0.65, maxDist: size * 0.85, order: 3 },
+    ];
+
+    for (const region of regions) {
+      const checkpoint = this.findCheckpointInRegion(
+        grid,
+        size,
+        start,
+        endpoint,
+        region.minDist,
+        region.maxDist
+      );
+
+      if (checkpoint) {
+        checkpoints.push({ ...checkpoint, order: region.order });
+      }
+    }
+
+    return checkpoints;
+  }
+
+  /**
+   * Find a valid checkpoint position within a specific distance range from start
+   */
+  findCheckpointInRegion(grid, size, start, endpoint, minDist, maxDist) {
+    const candidates = [];
+
+    // Search for valid path cells in the region
+    for (let y = 1; y < size - 1; y++) {
+      for (let x = 1; x < size - 1; x++) {
+        if (grid[y][x] === 0) {
+          // Path cell
+          // Calculate distance from start
+          const distFromStart = Math.sqrt(
+            Math.pow(x - start.x, 2) + Math.pow(y - start.y, 2)
+          );
+
+          // Check if it's in the desired region
+          if (distFromStart >= minDist && distFromStart <= maxDist) {
+            // Make sure it's not too close to endpoint
+            const distToEnd = Math.sqrt(
+              Math.pow(x - endpoint.x, 2) + Math.pow(y - endpoint.y, 2)
+            );
+
+            if (distToEnd > size * 0.1) {
+              // At least 10% away from endpoint
+              candidates.push({ x, y, distFromStart });
+            }
+          }
+        }
+      }
+    }
+
+    // If we found candidates, pick one randomly from the middle of the list
+    // (avoids extreme edges of the region)
+    if (candidates.length > 0) {
+      candidates.sort((a, b) => a.distFromStart - b.distFromStart);
+      const midIndex = Math.floor(candidates.length / 2);
+      const randomOffset = Math.floor(candidates.length * 0.2);
+      const index = Math.max(
+        0,
+        Math.min(
+          candidates.length - 1,
+          midIndex + (Math.random() * randomOffset * 2 - randomOffset)
+        )
+      );
+
+      return {
+        x: candidates[Math.floor(index)].x,
+        y: candidates[Math.floor(index)].y,
+      };
+    }
+
+    return null;
   }
 }
 

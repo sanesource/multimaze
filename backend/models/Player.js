@@ -12,6 +12,8 @@ class Player {
     this.rank = null;
     this.hasFinished = false;
     this.joinedAt = Date.now();
+    this.checkpointsReached = []; // Array of checkpoint orders reached
+    this.nextCheckpoint = 1; // The next checkpoint order to reach
   }
 
   setPosition(x, y) {
@@ -44,6 +46,22 @@ class Player {
     this.rank = rank;
   }
 
+  reachCheckpoint(checkpointOrder) {
+    if (!this.checkpointsReached.includes(checkpointOrder)) {
+      this.checkpointsReached.push(checkpointOrder);
+      this.nextCheckpoint = Math.max(...this.checkpointsReached) + 1;
+    }
+  }
+
+  hasReachedCheckpoint(checkpointOrder) {
+    return this.checkpointsReached.includes(checkpointOrder);
+  }
+
+  canFinish() {
+    // Player can finish if they've reached all 3 checkpoints
+    return this.checkpointsReached.length >= 3;
+  }
+
   reset() {
     // Reset player to lobby state
     this.position = { x: 0, y: 0 };
@@ -53,6 +71,8 @@ class Player {
     this.distanceToEnd = Infinity;
     this.rank = null;
     this.hasFinished = false;
+    this.checkpointsReached = [];
+    this.nextCheckpoint = 1;
   }
 
   toJSON() {
@@ -67,6 +87,8 @@ class Player {
       distanceToEnd: this.distanceToEnd,
       rank: this.rank,
       hasFinished: this.hasFinished,
+      checkpointsReached: this.checkpointsReached,
+      nextCheckpoint: this.nextCheckpoint,
     };
   }
 }

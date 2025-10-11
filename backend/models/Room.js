@@ -9,6 +9,7 @@ class Room {
       difficulty: settings.difficulty || "hard",
       timerDuration: settings.timerDuration || 300, // seconds
       maxPlayers: Math.min(settings.maxPlayers || 8, 16),
+      enableCheckpoints: settings.enableCheckpoints || false,
     };
     this.status = "waiting"; // 'waiting', 'in-progress', 'finished'
     this.maze = null;

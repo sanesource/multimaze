@@ -5,6 +5,7 @@ class Maze {
     this.grid = [];
     this.startPositions = [];
     this.endpoint = { x: dimensions.width - 2, y: dimensions.height - 2 };
+    this.checkpoints = []; // Array of {x, y, order} objects
   }
 
   setGrid(grid) {
@@ -17,6 +18,10 @@ class Maze {
 
   setEndpoint(endpoint) {
     this.endpoint = endpoint;
+  }
+
+  setCheckpoints(checkpoints) {
+    this.checkpoints = checkpoints;
   }
 
   isValidPosition(x, y) {
@@ -50,6 +55,7 @@ class Maze {
       grid: this.grid,
       startPositions: this.startPositions,
       endpoint: this.endpoint,
+      checkpoints: this.checkpoints,
     };
   }
 }

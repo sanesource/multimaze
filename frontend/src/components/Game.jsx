@@ -351,6 +351,172 @@ export default function Game() {
       ctx.fillStyle = shineGradient;
       ctx.fillRect(doorX, doorY, doorWidth, doorHeight);
 
+      // Draw checkpoints with numbers
+      if (maze.checkpoints && maze.checkpoints.length > 0) {
+        maze.checkpoints.forEach((checkpoint) => {
+          const cpX = checkpoint.x * cellSize;
+          const cpY = checkpoint.y * cellSize;
+          const cpWidth = cellSize;
+          const cpHeight = cellSize;
+          
+          // Check if this checkpoint has been reached by current player
+          const currentPlayerData = players.find(p => p.playerId === playerId);
+          const isReached = currentPlayerData?.checkpointsReached?.includes(checkpoint.order) || false;
+          const isNext = currentPlayerData?.nextCheckpoint === checkpoint.order;
+          
+          // Pulsing animation for next checkpoint
+          const cpPulse = isNext ? Math.sin(time * 3) * 0.5 + 0.5 : 0.3;
+          
+          // Background glow
+          const cpGlowGradient = ctx.createRadialGradient(
+            cpX + cpWidth / 2,
+            cpY + cpHeight / 2,
+            0,
+            cpX + cpWidth / 2,
+            cpY + cpHeight / 2,
+            cpWidth * (0.8 + cpPulse * 0.3)
+          );
+          
+          if (isReached) {
+            // Green for reached checkpoints
+            cpGlowGradient.addColorStop(0, `rgba(16, 185, 129, ${0.4 + cpPulse * 0.2})`);
+            cpGlowGradient.addColorStop(1, 'rgba(16, 185, 129, 0)');
+          } else if (isNext) {
+            // Blue for next checkpoint
+            cpGlowGradient.addColorStop(0, `rgba(59, 130, 246, ${0.4 + cpPulse * 0.3})`);
+            cpGlowGradient.addColorStop(1, 'rgba(59, 130, 246, 0)');
+          } else {
+            // Gray for future checkpoints
+            cpGlowGradient.addColorStop(0, `rgba(148, 163, 184, ${0.2 + cpPulse * 0.1})`);
+            cpGlowGradient.addColorStop(1, 'rgba(148, 163, 184, 0)');
+          }
+          
+          ctx.fillStyle = cpGlowGradient;
+          ctx.fillRect(cpX - cpWidth * 0.2, cpY - cpHeight * 0.2, cpWidth * 1.4, cpHeight * 1.4);
+          
+          // Checkpoint as flag marker
+          const cpCenterX = cpX + cpWidth / 2;
+          const cpCenterY = cpY + cpHeight / 2;
+          const flagWidth = cpWidth * 0.5;
+          const flagHeight = cpHeight * 0.35;
+          const poleHeight = cpHeight * 0.6;
+          // Offset pole to the left so flag is centered overall
+          const poleX = cpCenterX - flagWidth / 2;
+          const poleY = cpCenterY + cpHeight * 0.2;
+          
+          // Choose colors based on state
+          let flagColor1, flagColor2, poleColor;
+          if (isReached) {
+            flagColor1 = '#10b981';
+            flagColor2 = '#059669';
+            poleColor = '#065f46';
+          } else if (isNext) {
+            flagColor1 = '#3b82f6';
+            flagColor2 = '#2563eb';
+            poleColor = '#1e40af';
+          } else {
+            flagColor1 = '#94a3b8';
+            flagColor2 = '#64748b';
+            poleColor = '#475569';
+          }
+          
+          // Draw pole shadow
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+          ctx.fillRect(poleX + 2, poleY - poleHeight + 2, 3, poleHeight);
+          
+          // Draw pole
+          ctx.fillStyle = poleColor;
+          ctx.fillRect(poleX, poleY - poleHeight, 3, poleHeight);
+          
+          // Draw flag with wave effect
+          const waveOffset = Math.sin(time * 3) * 3;
+          ctx.beginPath();
+          ctx.moveTo(poleX + 3, poleY - poleHeight);
+          
+          // Top edge with wave
+          for (let i = 0; i <= 10; i++) {
+            const x = poleX + 3 + (flagWidth / 10) * i;
+            const y = poleY - poleHeight + Math.sin(time * 3 + i * 0.5) * 2;
+            ctx.lineTo(x, y);
+          }
+          
+          // Right edge
+          ctx.lineTo(poleX + 3 + flagWidth + waveOffset, poleY - poleHeight + flagHeight / 2);
+          
+          // Bottom edge with wave
+          for (let i = 10; i >= 0; i--) {
+            const x = poleX + 3 + (flagWidth / 10) * i;
+            const y = poleY - poleHeight + flagHeight + Math.sin(time * 3 + i * 0.5) * 2;
+            ctx.lineTo(x, y);
+          }
+          
+          ctx.closePath();
+          
+          // Flag gradient
+          const flagGradient = ctx.createLinearGradient(
+            poleX,
+            poleY - poleHeight,
+            poleX + flagWidth,
+            poleY - poleHeight
+          );
+          flagGradient.addColorStop(0, flagColor1);
+          flagGradient.addColorStop(1, flagColor2);
+          ctx.fillStyle = flagGradient;
+          ctx.fill();
+          
+          // Flag border
+          ctx.strokeStyle = isNext ? `rgba(255, 255, 255, ${0.8 + cpPulse * 0.2})` : '#ffffff';
+          ctx.lineWidth = isNext ? 2 : 1.5;
+          ctx.stroke();
+          
+          // Content on flag
+          if (isReached) {
+            // Checkmark for reached checkpoints
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            const checkCenterX = poleX + 3 + flagWidth / 2;
+            const checkCenterY = poleY - poleHeight + flagHeight / 2;
+            ctx.beginPath();
+            ctx.moveTo(checkCenterX - flagWidth * 0.15, checkCenterY);
+            ctx.lineTo(checkCenterX - flagWidth * 0.05, checkCenterY + flagHeight * 0.15);
+            ctx.lineTo(checkCenterX + flagWidth * 0.2, checkCenterY - flagHeight * 0.15);
+            ctx.stroke();
+          } else {
+            // Number for non-reached checkpoints
+            ctx.fillStyle = '#ffffff';
+            ctx.font = `bold ${Math.floor(cellSize * 0.45)}px sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+            ctx.shadowBlur = 2;
+            ctx.fillText(
+              checkpoint.order.toString(),
+              poleX + 3 + flagWidth / 2,
+              poleY - poleHeight + flagHeight / 2
+            );
+            ctx.shadowBlur = 0;
+          }
+          
+          // Rotating sparkles for next checkpoint (around flag)
+          if (isNext) {
+            for (let i = 0; i < 8; i++) {
+              const angle = (time * 2 + i * Math.PI / 4);
+              const distance = flagWidth * 0.8 + Math.sin(time * 4 + i) * 4;
+              const sparkleX = poleX + flagWidth / 2 + Math.cos(angle) * distance;
+              const sparkleY = poleY - poleHeight + flagHeight / 2 + Math.sin(angle) * distance;
+              const sparkleSize = 2 + Math.sin(time * 5 + i) * 1;
+              
+              ctx.fillStyle = `rgba(59, 130, 246, ${0.6 + cpPulse * 0.4})`;
+              ctx.beginPath();
+              ctx.arc(sparkleX, sparkleY, sparkleSize, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+        });
+      }
+
       // Update and draw particles
       particlesRef.current = particlesRef.current.filter(particle => {
         particle.life -= 0.02;

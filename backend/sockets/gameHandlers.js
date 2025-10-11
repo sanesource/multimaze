@@ -273,7 +273,8 @@ class GameHandlers {
       // Generate maze
       const maze = mazeGenerator.generate(
         room.settings.difficulty,
-        room.settings.maxPlayers
+        room.settings.maxPlayers,
+        room.settings.enableCheckpoints
       );
       room.setMaze(maze);
 
@@ -386,33 +387,69 @@ class GameHandlers {
       player.incrementMoves();
       room.updateActivity();
 
+      // Check if reached a checkpoint
+      if (room.settings.enableCheckpoints && room.maze.checkpoints.length > 0) {
+        const checkpoint = room.maze.checkpoints.find(
+          (cp) => cp.x === newX && cp.y === newY
+        );
+
+        if (checkpoint) {
+          // Check if this is the next checkpoint in order
+          if (checkpoint.order === player.nextCheckpoint) {
+            player.reachCheckpoint(checkpoint.order);
+            console.log(
+              `${player.username} reached checkpoint ${checkpoint.order}`
+            );
+
+            // Notify the room
+            this.io.to(roomId).emit("checkpoint-reached", {
+              playerId: player.playerId,
+              username: player.username,
+              checkpointOrder: checkpoint.order,
+              nextCheckpoint: player.nextCheckpoint,
+            });
+          }
+        }
+      }
+
       // Check if reached endpoint
       if (newX === room.maze.endpoint.x && newY === room.maze.endpoint.y) {
-        const completionTime = room.getElapsedTime();
-        player.finish(completionTime);
+        // If checkpoints are enabled, validate that player has reached all checkpoints
+        const canFinish =
+          !room.settings.enableCheckpoints || player.canFinish();
 
-        console.log(`${player.username} finished in ${completionTime}s`);
+        if (canFinish) {
+          const completionTime = room.getElapsedTime();
+          player.finish(completionTime);
 
-        // Notify room
-        this.io.to(roomId).emit("player-finished", {
-          playerId: player.playerId,
-          username: player.username,
-          completionTime,
-        });
+          console.log(`${player.username} finished in ${completionTime}s`);
 
-        // Check if this was the first finisher
-        if (!room.winner) {
-          room.setWinner(player.playerId);
-          this.io.to(roomId).emit("winner-announced", {
+          // Notify room
+          this.io.to(roomId).emit("player-finished", {
             playerId: player.playerId,
             username: player.username,
+            completionTime,
           });
-        }
 
-        // Check if all players finished
-        const allFinished = room.getAllPlayers().every((p) => p.hasFinished);
-        if (allFinished) {
-          this.endGame(room);
+          // Check if this was the first finisher
+          if (!room.winner) {
+            room.setWinner(player.playerId);
+            this.io.to(roomId).emit("winner-announced", {
+              playerId: player.playerId,
+              username: player.username,
+            });
+          }
+
+          // Check if all players finished
+          const allFinished = room.getAllPlayers().every((p) => p.hasFinished);
+          if (allFinished) {
+            this.endGame(room);
+          }
+        } else {
+          // Player tried to finish without all checkpoints
+          socket.emit("error", {
+            message: `You must reach all checkpoints first! (${player.checkpointsReached.length}/3)`,
+          });
         }
       } else {
         // Calculate distance to endpoint

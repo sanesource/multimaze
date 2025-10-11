@@ -27,6 +27,7 @@ export function GameProvider({ children }) {
     // Game events
     socketService.on('game-started', handleGameStarted);
     socketService.on('player-moved', handlePlayerMoved);
+    socketService.on('checkpoint-reached', handleCheckpointReached);
     socketService.on('player-finished', handlePlayerFinished);
     socketService.on('winner-announced', handleWinnerAnnounced);
     socketService.on('timer-update', handleTimerUpdate);
@@ -43,6 +44,7 @@ export function GameProvider({ children }) {
       socketService.off('room-restarted', handleRoomRestarted);
       socketService.off('game-started', handleGameStarted);
       socketService.off('player-moved', handlePlayerMoved);
+      socketService.off('checkpoint-reached', handleCheckpointReached);
       socketService.off('player-finished', handlePlayerFinished);
       socketService.off('winner-announced', handleWinnerAnnounced);
       socketService.off('timer-update', handleTimerUpdate);
@@ -101,6 +103,25 @@ export function GameProvider({ children }) {
       ...prev,
       [data.playerId]: data.position
     }));
+  }, []);
+
+  const handleCheckpointReached = useCallback((data) => {
+    console.log(`${data.username} reached checkpoint ${data.checkpointOrder}!`);
+    
+    // Update the player's checkpoint progress
+    setPlayers(prevPlayers => 
+      prevPlayers.map(player => 
+        player.playerId === data.playerId 
+          ? { 
+              ...player, 
+              checkpointsReached: player.checkpointsReached ? 
+                [...player.checkpointsReached, data.checkpointOrder] : 
+                [data.checkpointOrder],
+              nextCheckpoint: data.nextCheckpoint
+            }
+          : player
+      )
+    );
   }, []);
 
   const handlePlayerFinished = useCallback((data) => {
