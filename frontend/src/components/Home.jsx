@@ -90,9 +90,10 @@ export default function Home() {
 
         {/* Create Room Form */}
         {showCreate && (
-          <div className="max-w-md mx-auto glass p-8 rounded-2xl animate-fade-in">
+          <div className="max-w-4xl mx-auto glass p-8 rounded-2xl animate-fade-in">
             <h2 className="text-3xl font-bold mb-6 text-center">Create Room</h2>
-            <form onSubmit={handleCreateRoom} className="space-y-4">
+            <form onSubmit={handleCreateRoom} className="space-y-6">
+              {/* Username - Full Width */}
               <div>
                 <label className="block text-sm font-medium mb-2">Username</label>
                 <input
@@ -106,98 +107,104 @@ export default function Home() {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-2">Difficulty</label>
-                <select
-                  value={difficulty}
-                  onChange={(e) => setDifficulty(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg glass-dark border-white/20 focus:border-blue-400 outline-none transition-colors"
-                >
-                  <option value="easy">Easy (15×15)</option>
-                  <option value="medium">Medium (25×25)</option>
-                  <option value="hard">Hard (35×35)</option>
-                </select>
+              {/* Game Settings - 3 Columns */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Difficulty</label>
+                  <select
+                    value={difficulty}
+                    onChange={(e) => setDifficulty(e.target.value)}
+                    className="w-full px-4 py-3 rounded-lg glass-dark border-white/20 focus:border-blue-400 outline-none transition-colors"
+                  >
+                    <option value="easy">Easy (15×15)</option>
+                    <option value="medium">Medium (25×25)</option>
+                    <option value="hard">Hard (35×35)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Timer Duration</label>
+                  <select
+                    value={timerDuration}
+                    onChange={(e) => setTimerDuration(e.target.value)}
+                    className="w-full px-4 py-3 rounded-lg glass-dark border-white/20 focus:border-blue-400 outline-none transition-colors"
+                  >
+                    <option value="120">2 minutes</option>
+                    <option value="180">3 minutes</option>
+                    <option value="300">5 minutes</option>
+                    <option value="420">7 minutes</option>
+                    <option value="600">10 minutes</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Max Players</label>
+                  <select
+                    value={maxPlayers}
+                    onChange={(e) => setMaxPlayers(e.target.value)}
+                    className="w-full px-4 py-3 rounded-lg glass-dark border-white/20 focus:border-blue-400 outline-none transition-colors"
+                  >
+                    <option value="2">2 Players</option>
+                    <option value="4">4 Players</option>
+                    <option value="6">6 Players</option>
+                    <option value="8">8 Players</option>
+                    <option value="10">10 Players</option>
+                    <option value="12">12 Players</option>
+                    <option value="14">14 Players</option>
+                    <option value="16">16 Players</option>
+                  </select>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-2">Timer Duration</label>
-                <select
-                  value={timerDuration}
-                  onChange={(e) => setTimerDuration(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg glass-dark border-white/20 focus:border-blue-400 outline-none transition-colors"
-                >
-                  <option value="120">2 minutes</option>
-                  <option value="180">3 minutes</option>
-                  <option value="300">5 minutes</option>
-                  <option value="420">7 minutes</option>
-                  <option value="600">10 minutes</option>
-                </select>
-              </div>
+              {/* Game Modes - 3 Columns */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex items-center gap-3 p-4 rounded-lg glass-dark border border-white/20">
+                  <input
+                    type="checkbox"
+                    id="teamMode"
+                    checked={teamMode}
+                    onChange={(e) => setTeamMode(e.target.checked)}
+                    className="w-5 h-5 rounded border-white/20 bg-white/10 text-purple-500 focus:ring-2 focus:ring-purple-400 cursor-pointer"
+                  />
+                  <label htmlFor="teamMode" className="flex-1 cursor-pointer">
+                    <div className="font-medium">🏆 Team Mode</div>
+                    <div className="text-sm text-blue-200">Join Team A or B and race together</div>
+                  </label>
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-2">Max Players</label>
-                <select
-                  value={maxPlayers}
-                  onChange={(e) => setMaxPlayers(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg glass-dark border-white/20 focus:border-blue-400 outline-none transition-colors"
-                >
-                  <option value="2">2 Players</option>
-                  <option value="4">4 Players</option>
-                  <option value="6">6 Players</option>
-                  <option value="8">8 Players</option>
-                  <option value="10">10 Players</option>
-                  <option value="12">12 Players</option>
-                  <option value="14">14 Players</option>
-                  <option value="16">16 Players</option>
-                </select>
-              </div>
-
-              <div className="flex items-center gap-3 p-4 rounded-lg glass-dark border border-white/20">
-                <input
-                  type="checkbox"
-                  id="teamMode"
-                  checked={teamMode}
-                  onChange={(e) => setTeamMode(e.target.checked)}
-                  className="w-5 h-5 rounded border-white/20 bg-white/10 text-purple-500 focus:ring-2 focus:ring-purple-400 cursor-pointer"
-                />
-                <label htmlFor="teamMode" className="flex-1 cursor-pointer">
-                  <div className="font-medium">🏆 Team Mode</div>
-                  <div className="text-sm text-blue-200">Players join Team A or B and race together with shared checkpoints</div>
-                </label>
-              </div>
-
-              {!teamMode && (
                 <div className="flex items-center gap-3 p-4 rounded-lg glass-dark border border-white/20">
                   <input
                     type="checkbox"
                     id="enableCheckpoints"
-                    checked={enableCheckpoints}
+                    checked={teamMode ? true : enableCheckpoints}
                     onChange={(e) => setEnableCheckpoints(e.target.checked)}
-                    className="w-5 h-5 rounded border-white/20 bg-white/10 text-blue-500 focus:ring-2 focus:ring-blue-400 cursor-pointer"
+                    disabled={teamMode}
+                    className="w-5 h-5 rounded border-white/20 bg-white/10 text-blue-500 focus:ring-2 focus:ring-blue-400 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                   <label htmlFor="enableCheckpoints" className="flex-1 cursor-pointer">
                     <div className="font-medium">Enable Checkpoints</div>
-                    <div className="text-sm text-blue-200">Players must reach 3 checkpoints in order before the final goal</div>
+                    <div className="text-sm text-blue-200">Reach 3 checkpoints before goal</div>
                   </label>
                 </div>
-              )}
 
-              <div className="flex items-center gap-3 p-4 glass-dark rounded-lg">
-                <input
-                  type="checkbox"
-                  id="tunnelMode"
-                  checked={tunnelMode}
-                  onChange={(e) => setTunnelMode(e.target.checked)}
-                  className="w-5 h-5 rounded border-white/20 bg-black/30 text-blue-500 focus:ring-2 focus:ring-blue-400"
-                />
-                <label htmlFor="tunnelMode" className="text-sm font-medium cursor-pointer flex-1">
-                  <span className="text-yellow-400">🕯️ Tunnel Mode</span>
-                  <span className="block text-xs text-blue-200 mt-1">
-                    Limited vision with candle + 3 lightning charges (Spacebar)
-                  </span>
-                </label>
+                <div className="flex items-center gap-3 p-4 glass-dark rounded-lg border border-white/20">
+                  <input
+                    type="checkbox"
+                    id="tunnelMode"
+                    checked={tunnelMode}
+                    onChange={(e) => setTunnelMode(e.target.checked)}
+                    className="w-5 h-5 rounded border-white/20 bg-black/30 text-blue-500 focus:ring-2 focus:ring-blue-400 cursor-pointer"
+                  />
+                  <label htmlFor="tunnelMode" className="text-sm font-medium cursor-pointer flex-1">
+                    <span className="text-yellow-400">🕯️ Tunnel Mode</span>
+                    <span className="block text-xs text-blue-200 mt-1">
+                      Limited vision + lightning charges
+                    </span>
+                  </label>
+                </div>
               </div>
 
+              {/* Action Buttons */}
               <div className="flex gap-3 pt-4">
                 <button
                   type="button"
