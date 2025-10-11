@@ -12,69 +12,9 @@ export default function Game() {
   const [activeKeys, setActiveKeys] = useState(new Set());
   const [lightningCountdown, setLightningCountdown] = useState(0);
   const lightningTimerRef = useRef(null);
-  // Continuous movement state/refs
-  const moveDirectionRef = useRef(null);
-  const lastMoveTimestampRef = useRef(0);
-  const currentPositionRef = useRef(null);
-  const mazeRef = useRef(null);
-  const MOVE_INTERVAL_MS = 100; // step cadence
   
   const currentPlayer = players.find(p => p.playerId === playerId);
   const currentPosition = playerPositions[playerId] || currentPlayer?.position || { x: 0, y: 0 };
-
-  // Keep refs in sync to avoid stale closures inside intervals
-  useEffect(() => {
-    currentPositionRef.current = currentPosition;
-  }, [currentPosition]);
-
-  useEffect(() => {
-    mazeRef.current = maze;
-  }, [maze]);
-
-  const getNextCoords = (pos, direction) => {
-    if (!pos) return pos;
-    const dirToDelta = {
-      up: { dx: 0, dy: -1 },
-      down: { dx: 0, dy: 1 },
-      left: { dx: -1, dy: 0 },
-      right: { dx: 1, dy: 0 },
-    };
-    const delta = dirToDelta[direction];
-    if (!delta) return pos;
-    return { x: pos.x + delta.dx, y: pos.y + delta.dy };
-  };
-
-  const canMove = (direction) => {
-    const m = mazeRef.current;
-    const pos = currentPositionRef.current;
-    if (!m || !pos) return false;
-    const next = getNextCoords(pos, direction);
-    if (!next) return false;
-    if (
-      next.x < 0 ||
-      next.y < 0 ||
-      next.x >= m.dimensions.width ||
-      next.y >= m.dimensions.height
-    ) {
-      return false;
-    }
-    const cell = m.grid[next.y][next.x];
-    return cell !== 1; // 1 = wall
-  };
-
-  const attemptMoveOnce = (direction) => {
-    const now = Date.now();
-    if (now - lastMoveTimestampRef.current < MOVE_INTERVAL_MS) return;
-    if (canMove(direction)) {
-      movePlayer(direction);
-      lastMoveTimestampRef.current = now;
-    } else {
-      // Stop if blocked
-      if (moveDirectionRef.current === direction) {
-        moveDirectionRef.current = null;
-      }
-    }
-  };
 
   // Lightning countdown timer
   useEffect(() => {
@@ -100,7 +40,7 @@ export default function Game() {
     }
   }, [lightningActive]);
 
-  // Handle keyboard input with visual feedback + set continuous direction
+  // Handle keyboard input with visual feedback
   useEffect(() => {
     const handleKeyDown = (e) => {
       const key = e.key.toLowerCase();
@@ -119,9 +59,7 @@ export default function Game() {
       if (direction) {
         e.preventDefault();
         setActiveKeys(prev => new Set(prev).add(direction));
-        // Set current movement direction and try an immediate step for responsiveness
-        moveDirectionRef.current = direction;
-        attemptMoveOnce(direction);
+        movePlayer(direction);
       }
       
       // Handle spacebar for lightning in tunnel mode
@@ -153,7 +91,6 @@ export default function Game() {
           newSet.delete(direction);
           return newSet;
         });
-        // Do not stop movement on keyup; movement continues until blocked or new direction
       }
     };
 
@@ -164,17 +101,6 @@ export default function Game() {
       window.removeEventListener('keyup', handleKeyUp);
     };
   }, [movePlayer]);
-
-  // Continuous movement loop
-  useEffect(() => {
-    if (!maze) return;
-    const intervalId = setInterval(() => {
-      const dir = moveDirectionRef.current;
-      if (!dir) return;
-      attemptMoveOnce(dir);
-    }, MOVE_INTERVAL_MS);
-    return () => clearInterval(intervalId);
-  }, [maze]);
 
   // Initialize player animations when positions change
   useEffect(() => {
