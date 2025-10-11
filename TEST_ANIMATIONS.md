@@ -43,11 +43,22 @@ cd frontend && npm run dev
 - **Location**: Bottom of game screen
 - **Test**: Press ↑↓←→ or WASD and watch keys glow blue
 
-### 6. Pulsing Effects 🌟
+### 6. Animated Door 🚪✨
 
-- **Goal**: Yellow endpoint pulses continuously
+- **What**: Goal is now a detailed wooden door with magical effects
+- **Features**:
+  - Brown wooden panels with carved details
+  - Golden door knob on the right
+  - Pulsing golden glow around the door
+  - 8 rotating sparkles orbiting the door
+  - Glowing border that pulses
+- **Test**: Look at the goal - should see a detailed door with magical effects
+
+### 7. Pulsing Effects 🌟
+
+- **Door**: Golden glow and sparkles animate continuously
 - **Your Player**: White dashed ring rotates around you
-- **Test**: Find your player - should have animated white outline
+- **Test**: Watch the door glow and sparkles rotate smoothly
 
 ## Testing Checklist
 
@@ -58,7 +69,8 @@ cd frontend && npm run dev
 - [ ] Player has directional arrow
 - [ ] Particles appear when moving
 - [ ] Your player has animated ring
-- [ ] Goal pulses attractively
+- [ ] Goal door looks detailed with sparkles
+- [ ] Door glow and sparkles animate
 - [ ] Can use both arrow keys and WASD
 
 ### Multiplayer Testing (2+ players)

@@ -47,11 +47,15 @@ The player movement system has been significantly enhanced with smooth animation
 - **Dashed border**: Rotating dash pattern for attention
 - **Opacity pulse**: Ring fades in and out smoothly
 
-#### Goal/Endpoint
+#### Goal/Endpoint (Magical Door)
 
-- **Pulsing effect**: Golden goal marker pulses continuously
-- **Radial gradient**: Creates glow effect
-- **Sine wave animation**: Smooth, perpetual motion
+- **Wooden door design**: Detailed door with frame, panels, and golden knob
+- **Pulsing glow**: Golden aura pulses around the door
+- **Rotating sparkles**: 8 magical sparkles orbit the door
+- **Shadow effects**: Door knob has depth with shadows
+- **Glowing border**: Frame pulses with golden light
+- **Shine overlay**: Subtle highlight creates polished look
+- **Animated particles**: Sparkles rotate and twinkle independently
 
 ### 6. **Keyboard Visual Feedback**
 

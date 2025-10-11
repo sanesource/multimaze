@@ -177,26 +177,166 @@ export default function Game() {
         }
       }
 
-      // Draw endpoint with pulsing effect
+      // Draw endpoint as animated door
       const endpoint = maze.endpoint;
-      const pulseTime = Date.now() / 1000;
-      const pulse = Math.sin(pulseTime * 2) * 0.1 + 0.9;
+      const time = Date.now() / 1000;
+      const pulse = Math.sin(time * 2) * 0.5 + 0.5; // 0 to 1
+      const doorX = endpoint.x * cellSize;
+      const doorY = endpoint.y * cellSize;
+      const doorWidth = cellSize;
+      const doorHeight = cellSize;
       
-      const gradient = ctx.createRadialGradient(
-        endpoint.x * cellSize + cellSize / 2,
-        endpoint.y * cellSize + cellSize / 2,
+      // Background glow
+      const glowGradient = ctx.createRadialGradient(
+        doorX + doorWidth / 2,
+        doorY + doorHeight / 2,
         0,
-        endpoint.x * cellSize + cellSize / 2,
-        endpoint.y * cellSize + cellSize / 2,
-        cellSize * pulse
+        doorX + doorWidth / 2,
+        doorY + doorHeight / 2,
+        doorWidth * (1 + pulse * 0.3)
       );
-      gradient.addColorStop(0, '#fbbf24');
-      gradient.addColorStop(1, '#f59e0b');
-      ctx.fillStyle = gradient;
-      ctx.fillRect(endpoint.x * cellSize, endpoint.y * cellSize, cellSize, cellSize);
-      ctx.strokeStyle = '#fbbf24';
+      glowGradient.addColorStop(0, `rgba(251, 191, 36, ${0.3 + pulse * 0.2})`);
+      glowGradient.addColorStop(0.5, `rgba(245, 158, 11, ${0.2 + pulse * 0.1})`);
+      glowGradient.addColorStop(1, 'rgba(245, 158, 11, 0)');
+      ctx.fillStyle = glowGradient;
+      ctx.fillRect(
+        doorX - doorWidth * 0.3,
+        doorY - doorHeight * 0.3,
+        doorWidth * 1.6,
+        doorHeight * 1.6
+      );
+      
+      // Door frame (stone/wood)
+      const frameThickness = doorWidth * 0.12;
+      ctx.fillStyle = '#78350f';
+      ctx.fillRect(doorX, doorY, doorWidth, doorHeight);
+      
+      // Inner door background
+      ctx.fillStyle = '#92400e';
+      ctx.fillRect(
+        doorX + frameThickness,
+        doorY + frameThickness,
+        doorWidth - frameThickness * 2,
+        doorHeight - frameThickness * 2
+      );
+      
+      // Door panels with gradient
+      const panelGradient = ctx.createLinearGradient(
+        doorX + frameThickness,
+        doorY,
+        doorX + doorWidth - frameThickness,
+        doorY
+      );
+      panelGradient.addColorStop(0, '#b45309');
+      panelGradient.addColorStop(0.5, '#d97706');
+      panelGradient.addColorStop(1, '#b45309');
+      ctx.fillStyle = panelGradient;
+      
+      // Left door panel
+      const panelMargin = frameThickness * 1.5;
+      const panelWidth = (doorWidth - frameThickness * 2 - panelMargin * 3) / 2;
+      const panelHeight = doorHeight - frameThickness * 2 - panelMargin * 2;
+      
+      ctx.fillRect(
+        doorX + panelMargin,
+        doorY + panelMargin,
+        panelWidth,
+        panelHeight
+      );
+      
+      // Right door panel
+      ctx.fillRect(
+        doorX + panelMargin * 2 + panelWidth,
+        doorY + panelMargin,
+        panelWidth,
+        panelHeight
+      );
+      
+      // Door panel borders (carved details)
+      ctx.strokeStyle = '#78350f';
       ctx.lineWidth = 2;
-      ctx.strokeRect(endpoint.x * cellSize, endpoint.y * cellSize, cellSize, cellSize);
+      ctx.strokeRect(
+        doorX + panelMargin,
+        doorY + panelMargin,
+        panelWidth,
+        panelHeight
+      );
+      ctx.strokeRect(
+        doorX + panelMargin * 2 + panelWidth,
+        doorY + panelMargin,
+        panelWidth,
+        panelHeight
+      );
+      
+      // Door handle/knob
+      const knobX = doorX + doorWidth - frameThickness - panelMargin * 2;
+      const knobY = doorY + doorHeight / 2;
+      const knobRadius = doorWidth * 0.08;
+      
+      // Knob shadow
+      ctx.beginPath();
+      ctx.arc(knobX + 1, knobY + 1, knobRadius, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+      ctx.fill();
+      
+      // Knob
+      const knobGradient = ctx.createRadialGradient(
+        knobX - knobRadius * 0.3,
+        knobY - knobRadius * 0.3,
+        0,
+        knobX,
+        knobY,
+        knobRadius
+      );
+      knobGradient.addColorStop(0, '#fbbf24');
+      knobGradient.addColorStop(1, '#f59e0b');
+      ctx.beginPath();
+      ctx.arc(knobX, knobY, knobRadius, 0, Math.PI * 2);
+      ctx.fillStyle = knobGradient;
+      ctx.fill();
+      ctx.strokeStyle = '#b45309';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      
+      // Magical sparkles around door
+      for (let i = 0; i < 8; i++) {
+        const angle = (time + i * Math.PI / 4) * 2;
+        const distance = doorWidth * 0.6 + Math.sin(time * 3 + i) * 5;
+        const sparkleX = doorX + doorWidth / 2 + Math.cos(angle) * distance;
+        const sparkleY = doorY + doorHeight / 2 + Math.sin(angle) * distance;
+        const sparkleSize = (Math.sin(time * 4 + i) * 0.5 + 0.5) * 2 + 1;
+        
+        // Sparkle cross
+        ctx.strokeStyle = `rgba(251, 191, 36, ${0.6 + pulse * 0.4})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(sparkleX - sparkleSize, sparkleY);
+        ctx.lineTo(sparkleX + sparkleSize, sparkleY);
+        ctx.moveTo(sparkleX, sparkleY - sparkleSize);
+        ctx.lineTo(sparkleX, sparkleY + sparkleSize);
+        ctx.stroke();
+      }
+      
+      // Glowing border frame
+      ctx.strokeStyle = `rgba(251, 191, 36, ${0.5 + pulse * 0.5})`;
+      ctx.lineWidth = 3;
+      ctx.shadowBlur = 10 + pulse * 10;
+      ctx.shadowColor = '#fbbf24';
+      ctx.strokeRect(doorX, doorY, doorWidth, doorHeight);
+      ctx.shadowBlur = 0;
+      
+      // Door shine/highlight effect
+      const shineGradient = ctx.createLinearGradient(
+        doorX,
+        doorY,
+        doorX + doorWidth,
+        doorY + doorHeight
+      );
+      shineGradient.addColorStop(0, `rgba(255, 255, 255, ${0.1 + pulse * 0.05})`);
+      shineGradient.addColorStop(0.5, 'rgba(255, 255, 255, 0)');
+      shineGradient.addColorStop(1, `rgba(255, 255, 255, ${0.05 + pulse * 0.02})`);
+      ctx.fillStyle = shineGradient;
+      ctx.fillRect(doorX, doorY, doorWidth, doorHeight);
 
       // Update and draw particles
       particlesRef.current = particlesRef.current.filter(particle => {
