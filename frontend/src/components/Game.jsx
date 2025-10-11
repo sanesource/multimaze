@@ -122,25 +122,38 @@ export default function Game() {
     });
   }, [players, playerPositions]);
 
-  // Calculate cell size based on canvas size
+  // Calculate cell size based on available viewport
   useEffect(() => {
     if (!maze || !canvasRef.current) return;
 
-    const canvas = canvasRef.current;
-    const container = canvas.parentElement;
+    const calculateSize = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      
+      // Account for header (~80px) + padding + controls (~40px)
+      const headerHeight = 100;
+      const controlsHeight = 50;
+      const padding = 32;
+      
+      const availableWidth = window.innerWidth - padding;
+      const availableHeight = window.innerHeight - headerHeight - controlsHeight - padding;
+
+      const cellWidth = Math.floor(availableWidth / maze.dimensions.width);
+      const cellHeight = Math.floor(availableHeight / maze.dimensions.height);
+      
+      // Use larger cells with good minimum, but cap at reasonable size
+      const size = Math.max(Math.min(cellWidth, cellHeight, 50), 20);
+
+      setCellSize(size);
+      canvas.width = maze.dimensions.width * size;
+      canvas.height = maze.dimensions.height * size;
+    };
+
+    calculateSize();
     
-    // Use available space more efficiently
-    const availableWidth = window.innerWidth * 0.95;
-    const availableHeight = window.innerHeight * 0.75;
-
-    const cellWidth = Math.floor(availableWidth / maze.dimensions.width);
-    const cellHeight = Math.floor(availableHeight / maze.dimensions.height);
-    // Use larger cells with good minimum
-    const size = Math.max(Math.min(cellWidth, cellHeight), 25);
-
-    setCellSize(size);
-    canvas.width = maze.dimensions.width * size;
-    canvas.height = maze.dimensions.height * size;
+    // Recalculate on window resize
+    window.addEventListener('resize', calculateSize);
+    return () => window.removeEventListener('resize', calculateSize);
   }, [maze]);
 
   // Animated rendering with smooth interpolation
@@ -497,34 +510,81 @@ export default function Game() {
   const activePlayers = players.filter(p => !p.hasFinished && p.isConnected);
 
   return (
-    <div className="min-h-screen flex flex-col p-2">
-      {/* Header */}
-      <div className="glass mb-2 p-3 rounded-xl">
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
-          {/* Timer */}
+    <div className="h-screen flex flex-col overflow-hidden">
+      {/* Unified Header */}
+      <div className="glass m-2 p-3 rounded-xl shadow-lg">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          {/* Timer - Left */}
           <div className="flex items-center gap-3">
-            <Clock className={`w-8 h-8 ${getTimerColor()}`} />
+            <Clock className={`w-7 h-7 ${getTimerColor()}`} />
             <div>
-              <div className={`text-3xl font-bold font-mono ${getTimerColor()}`}>
+              <div className={`text-2xl font-bold font-mono ${getTimerColor()}`}>
                 {formatTime(timer.remaining)}
               </div>
-              <div className="text-xs text-blue-200">Time Remaining</div>
+              <div className="text-xs text-blue-200">Time Left</div>
             </div>
           </div>
 
-          {/* Players Info */}
-          <div className="flex items-center gap-6">
+          {/* Players Status - Center */}
+          <div className="flex-1 flex gap-2 justify-center overflow-x-auto px-4 max-w-3xl scrollbar-hide">
+            {players.map((player, index) => {
+              const colors = [
+                'bg-gradient-to-br from-blue-400 to-blue-600',
+                'bg-gradient-to-br from-red-400 to-red-600',
+                'bg-gradient-to-br from-green-400 to-green-600',
+                'bg-gradient-to-br from-purple-400 to-purple-600',
+                'bg-gradient-to-br from-orange-400 to-orange-600',
+                'bg-gradient-to-br from-pink-400 to-pink-600',
+                'bg-gradient-to-br from-cyan-400 to-cyan-600',
+                'bg-gradient-to-br from-lime-400 to-lime-600'
+              ];
+              const color = colors[index % colors.length];
+              const isCurrentPlayer = player.playerId === playerId;
+              
+              return (
+                <div
+                  key={player.playerId}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg backdrop-blur-sm border transition-all duration-200 min-w-fit ${
+                    isCurrentPlayer 
+                      ? 'bg-white/20 border-white/40 shadow-lg shadow-white/20 scale-105' 
+                      : 'bg-white/5 border-white/10 hover:bg-white/10'
+                  }`}
+                  title={player.username}
+                >
+                  <div className={`w-3 h-3 rounded-full ${color} shadow-md`} />
+                  <span className={`text-sm font-medium truncate max-w-[100px] ${
+                    isCurrentPlayer ? 'text-white' : 'text-blue-100'
+                  }`}>
+                    {player.username}
+                  </span>
+                  {player.hasFinished && (
+                    <span className="flex items-center justify-center w-5 h-5 text-xs bg-yellow-500/40 text-yellow-200 rounded-full border border-yellow-400/50">
+                      ✓
+                    </span>
+                  )}
+                  {!player.isConnected && (
+                    <span className="flex items-center justify-center px-2 py-0.5 text-xs bg-gray-500/40 text-gray-300 rounded-full border border-gray-400/50">
+                      ⚠
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Stats - Right */}
+          <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <Users className="w-6 h-6 text-blue-400" />
-              <div>
-                <div className="text-xl font-bold">{activePlayers.length}</div>
+              <Users className="w-5 h-5 text-blue-400" />
+              <div className="text-center">
+                <div className="text-lg font-bold leading-none">{activePlayers.length}</div>
                 <div className="text-xs text-blue-200">Active</div>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Trophy className="w-6 h-6 text-yellow-400" />
-              <div>
-                <div className="text-xl font-bold">{finishedPlayers.length}</div>
+              <Trophy className="w-5 h-5 text-yellow-400" />
+              <div className="text-center">
+                <div className="text-lg font-bold leading-none">{finishedPlayers.length}</div>
                 <div className="text-xs text-blue-200">Finished</div>
               </div>
             </div>
@@ -532,16 +592,15 @@ export default function Game() {
         </div>
       </div>
 
-      {/* Game Canvas */}
-      <div className="flex-1 flex items-center justify-center">
-        <div className="glass p-3 rounded-xl flex flex-col items-center justify-center">
+      {/* Game Canvas - Full Height */}
+      <div className="flex-1 flex items-center justify-center p-2 overflow-hidden">
+        <div className="glass p-3 rounded-xl flex flex-col items-center justify-center max-h-full">
           <canvas
             ref={canvasRef}
             className="mx-auto"
             style={{ imageRendering: 'pixelated' }}
           />
           <div className="mt-2 text-center text-sm text-blue-200">
-            Use{' '}
             <kbd className={`px-2 py-1 glass-dark rounded transition-all ${activeKeys.has('up') ? 'bg-blue-500/50 scale-110 shadow-lg' : ''}`}>
               ↑
             </kbd>{' '}
@@ -554,40 +613,8 @@ export default function Game() {
             <kbd className={`px-2 py-1 glass-dark rounded transition-all ${activeKeys.has('right') ? 'bg-blue-500/50 scale-110 shadow-lg' : ''}`}>
               →
             </kbd>{' '}
-            or WASD to move
+            <span className="text-xs">or WASD</span>
           </div>
-        </div>
-      </div>
-
-      {/* Players Status */}
-      <div className="glass mt-2 p-2 rounded-xl">
-        <div className="flex gap-4 max-w-7xl mx-auto overflow-x-auto">
-          {players.map((player, index) => {
-            const colors = ['bg-blue-500', 'bg-red-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500', 'bg-pink-500', 'bg-cyan-500', 'bg-lime-500'];
-            const color = colors[index % colors.length];
-            
-            return (
-              <div
-                key={player.playerId}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg glass-dark min-w-fit ${
-                  player.playerId === playerId ? 'ring-2 ring-white' : ''
-                }`}
-              >
-                <div className={`w-3 h-3 rounded-full ${color}`} />
-                <span className="font-medium">{player.username}</span>
-                {player.hasFinished && (
-                  <span className="text-xs px-2 py-1 bg-yellow-500/30 text-yellow-300 rounded">
-                    ✓ Finished
-                  </span>
-                )}
-                {!player.isConnected && (
-                  <span className="text-xs px-2 py-1 bg-gray-500/30 text-gray-400 rounded">
-                    Disconnected
-                  </span>
-                )}
-              </div>
-            );
-          })}
         </div>
       </div>
     </div>
