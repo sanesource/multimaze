@@ -3,9 +3,11 @@ import { useGame } from '../context/GameContext';
 import { Trophy, Clock, Footprints, Target, Home, RotateCcw } from 'lucide-react';
 
 export default function Results() {
-  const { gameResults, leaveRoom, playerId } = useGame();
+  const { gameResults, leaveRoom, restartRoom, playerId, room } = useGame();
 
   if (!gameResults) return null;
+
+  const isHost = playerId === room?.hostId;
 
   const formatTime = (seconds) => {
     if (!seconds) return 'N/A';
@@ -144,13 +146,19 @@ export default function Results() {
             <Home className="w-5 h-5" />
             Return Home
           </button>
-          <button
-            onClick={() => window.location.reload()}
-            className="flex-1 px-6 py-4 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 transition-all font-semibold flex items-center justify-center gap-2"
-          >
-            <RotateCcw className="w-5 h-5" />
-            Play Again
-          </button>
+          {isHost ? (
+            <button
+              onClick={restartRoom}
+              className="flex-1 px-6 py-4 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 transition-all font-semibold flex items-center justify-center gap-2"
+            >
+              <RotateCcw className="w-5 h-5" />
+              Play Again (Return to Lobby)
+            </button>
+          ) : (
+            <div className="flex-1 px-6 py-4 rounded-xl glass text-center">
+              <p className="text-blue-200">Waiting for host to restart...</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

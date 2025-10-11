@@ -11,6 +11,13 @@ export default function Lobby() {
   const allReady = players.length > 0 && players.every(p => p.isReady);
   const currentPlayer = players.find(p => p.playerId === playerId);
 
+  // Sync local ready state with server state
+  React.useEffect(() => {
+    if (currentPlayer) {
+      setIsReady(currentPlayer.isReady);
+    }
+  }, [currentPlayer]);
+
   const copyRoomCode = () => {
     navigator.clipboard.writeText(room.roomId);
     setCopied(true);

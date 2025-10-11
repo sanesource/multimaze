@@ -30,6 +30,7 @@ class GameHandlers {
     socket.on("leave-room", () => this.onLeaveRoom(socket));
     socket.on("player-ready", (data) => this.onPlayerReady(socket, data));
     socket.on("start-game", () => this.onStartGame(socket));
+    socket.on("restart-room", () => this.onRestartRoom(socket));
     socket.on("player-move", (data) => this.onPlayerMove(socket, data));
     socket.on("disconnect", () => this.onDisconnect(socket));
   }
@@ -296,6 +297,43 @@ class GameHandlers {
       this.startGameTimer(room);
     } catch (error) {
       console.error("Error starting game:", error);
+      socket.emit("error", { message: error.message });
+    }
+  }
+
+  /**
+   * Restart room - return to lobby after game ends
+   */
+  onRestartRoom(socket) {
+    try {
+      const { playerId, roomId } = socket.data;
+
+      const room = roomManager.getRoom(roomId);
+      if (!room) return;
+
+      // Only host can restart
+      if (playerId !== room.hostId) {
+        return socket.emit("error", {
+          message: "Only the host can restart the room",
+        });
+      }
+
+      // Can only restart from finished state
+      if (!room.isGameFinished()) {
+        return socket.emit("error", {
+          message: "Game must be finished to restart",
+        });
+      }
+
+      // Reset room to lobby state
+      room.resetToLobby();
+
+      console.log(`Room restarted: ${roomId}`);
+
+      // Notify all players to return to lobby
+      this.io.to(roomId).emit("room-restarted", room.toJSON());
+    } catch (error) {
+      console.error("Error restarting room:", error);
       socket.emit("error", { message: error.message });
     }
   }

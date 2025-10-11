@@ -126,6 +126,31 @@ class Room {
     this.winner = playerId;
   }
 
+  resetToLobby() {
+    // Reset room state to waiting (lobby)
+    this.status = "waiting";
+    this.maze = null;
+    this.startTime = null;
+    this.endTime = null;
+    this.winner = null;
+
+    if (this.gameTimer) {
+      clearInterval(this.gameTimer);
+      this.gameTimer = null;
+    }
+
+    // Reset all players to lobby state
+    this.getAllPlayers().forEach((player) => {
+      player.reset();
+      // Keep host ready, others not ready
+      if (player.playerId === this.hostId) {
+        player.setReady(true);
+      }
+    });
+
+    this.updateActivity();
+  }
+
   toJSON() {
     return {
       roomId: this.roomId,

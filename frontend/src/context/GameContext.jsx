@@ -22,6 +22,7 @@ export function GameProvider({ children }) {
     socketService.on('player-joined', handlePlayerJoined);
     socketService.on('player-left', handlePlayerLeft);
     socketService.on('room-closed', handleRoomClosed);
+    socketService.on('room-restarted', handleRoomRestarted);
 
     // Game events
     socketService.on('game-started', handleGameStarted);
@@ -39,6 +40,7 @@ export function GameProvider({ children }) {
       socketService.off('player-joined', handlePlayerJoined);
       socketService.off('player-left', handlePlayerLeft);
       socketService.off('room-closed', handleRoomClosed);
+      socketService.off('room-restarted', handleRoomRestarted);
       socketService.off('game-started', handleGameStarted);
       socketService.off('player-moved', handlePlayerMoved);
       socketService.off('player-finished', handlePlayerFinished);
@@ -68,6 +70,16 @@ export function GameProvider({ children }) {
     setError(data.message);
     setGameState('home');
     setRoom(null);
+  }, []);
+
+  const handleRoomRestarted = useCallback((roomData) => {
+    setRoom(roomData);
+    setPlayers(roomData.players);
+    setGameState('lobby');
+    setMaze(null);
+    setGameResults(null);
+    setTimer({ elapsed: 0, remaining: 0 });
+    setPlayerPositions({});
   }, []);
 
   const handleGameStarted = useCallback((roomData) => {
@@ -165,6 +177,10 @@ export function GameProvider({ children }) {
     socketService.startGame();
   }, []);
 
+  const restartRoom = useCallback(() => {
+    socketService.restartRoom();
+  }, []);
+
   const movePlayer = useCallback((direction) => {
     socketService.movePlayer(direction);
   }, []);
@@ -188,6 +204,7 @@ export function GameProvider({ children }) {
     leaveRoom,
     toggleReady,
     startGame,
+    restartRoom,
     movePlayer,
     clearError,
   };

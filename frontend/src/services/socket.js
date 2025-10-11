@@ -61,6 +61,10 @@ class SocketService {
     this.socket.emit("start-game");
   }
 
+  restartRoom() {
+    this.socket.emit("restart-room");
+  }
+
   movePlayer(direction) {
     this.socket.emit("player-move", { direction });
   }

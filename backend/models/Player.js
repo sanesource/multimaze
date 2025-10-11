@@ -44,6 +44,17 @@ class Player {
     this.rank = rank;
   }
 
+  reset() {
+    // Reset player to lobby state
+    this.position = { x: 0, y: 0 };
+    this.isReady = false;
+    this.moves = 0;
+    this.completionTime = null;
+    this.distanceToEnd = Infinity;
+    this.rank = null;
+    this.hasFinished = false;
+  }
+
   toJSON() {
     return {
       playerId: this.playerId,
