@@ -48,6 +48,11 @@ class RankingService {
    * @returns {Object}
    */
   getGameResults(room) {
+    // If team mode, return team-based results
+    if (room.settings.teamMode) {
+      return this.getTeamGameResults(room);
+    }
+
     const rankedPlayers = this.calculateRankings(room);
 
     const results = {
@@ -73,6 +78,106 @@ class RankingService {
     };
 
     return results;
+  }
+
+  /**
+   * Get team-based game results
+   * @param {Room} room
+   * @returns {Object}
+   */
+  getTeamGameResults(room) {
+    const teamAPlayers = room.getTeamPlayers("A");
+    const teamBPlayers = room.getTeamPlayers("B");
+
+    // Rank players within each team
+    const rankedTeamA = this.rankTeamPlayers(teamAPlayers);
+    const rankedTeamB = this.rankTeamPlayers(teamBPlayers);
+
+    // Calculate team statistics
+    const teamAStats = this.calculateTeamStats(teamAPlayers, room);
+    const teamBStats = this.calculateTeamStats(teamBPlayers, room);
+
+    const results = {
+      roomId: room.roomId,
+      gameTime: room.getElapsedTime(),
+      teamMode: true,
+      winningTeam: room.winningTeam,
+      teams: {
+        A: {
+          name: "Team A",
+          players: rankedTeamA.map((player) => ({
+            playerId: player.playerId,
+            username: player.username,
+            hasFinished: player.hasFinished,
+            completionTime: player.completionTime,
+            distanceToEnd: player.distanceToEnd,
+            moves: player.moves,
+            progressPercentage: this.calculateProgressPercentage(player, room.maze),
+          })),
+          statistics: teamAStats,
+          checkpointsReached: room.getTeamCheckpoints("A"),
+        },
+        B: {
+          name: "Team B",
+          players: rankedTeamB.map((player) => ({
+            playerId: player.playerId,
+            username: player.username,
+            hasFinished: player.hasFinished,
+            completionTime: player.completionTime,
+            distanceToEnd: player.distanceToEnd,
+            moves: player.moves,
+            progressPercentage: this.calculateProgressPercentage(player, room.maze),
+          })),
+          statistics: teamBStats,
+          checkpointsReached: room.getTeamCheckpoints("B"),
+        },
+      },
+    };
+
+    return results;
+  }
+
+  /**
+   * Rank players within a team
+   */
+  rankTeamPlayers(players) {
+    return players.sort((a, b) => {
+      // Both finished
+      if (a.hasFinished && b.hasFinished) {
+        return a.completionTime - b.completionTime;
+      }
+
+      // Only a finished
+      if (a.hasFinished) return -1;
+
+      // Only b finished
+      if (b.hasFinished) return 1;
+
+      // Neither finished - sort by distance
+      if (a.distanceToEnd !== b.distanceToEnd) {
+        return a.distanceToEnd - b.distanceToEnd;
+      }
+
+      // Tie-breaker: fewer moves
+      return a.moves - b.moves;
+    });
+  }
+
+  /**
+   * Calculate statistics for a team
+   */
+  calculateTeamStats(players, room) {
+    const finishers = players.filter((p) => p.hasFinished);
+    
+    return {
+      totalPlayers: players.length,
+      finishers: finishers.length,
+      allFinished: finishers.length === players.length && players.length > 0,
+      averageTime: this.calculateAverageTime(players),
+      averageMoves: this.calculateAverageMoves(players),
+      fastestTime: finishers.length > 0 ? Math.min(...finishers.map(p => p.completionTime)) : null,
+      slowestTime: finishers.length > 0 ? Math.max(...finishers.map(p => p.completionTime)) : null,
+    };
   }
 
   /**

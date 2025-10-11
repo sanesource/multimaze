@@ -11,6 +11,7 @@ class Room {
       maxPlayers: Math.min(settings.maxPlayers || 8, 16),
       enableCheckpoints: settings.enableCheckpoints || false,
       tunnelMode: settings.tunnelMode === true,
+      teamMode: settings.teamMode === true,
     };
     this.status = "waiting"; // 'waiting', 'in-progress', 'finished'
     this.maze = null;
@@ -20,6 +21,8 @@ class Room {
     this.lastActivity = Date.now();
     this.gameTimer = null;
     this.winner = null;
+    this.teamCheckpoints = { A: [], B: [] }; // Shared checkpoint progress for teams
+    this.winningTeam = null;
   }
 
   generateRoomCode() {
@@ -128,6 +131,50 @@ class Room {
     this.winner = playerId;
   }
 
+  // Team-related methods
+  getTeamPlayers(team) {
+    return this.getAllPlayers().filter((player) => player.team === team);
+  }
+
+  getTeamCount(team) {
+    return this.getTeamPlayers(team).length;
+  }
+
+  getTeamCheckpoints(team) {
+    return this.teamCheckpoints[team] || [];
+  }
+
+  addTeamCheckpoint(team, checkpointOrder) {
+    if (!this.teamCheckpoints[team].includes(checkpointOrder)) {
+      this.teamCheckpoints[team].push(checkpointOrder);
+      this.teamCheckpoints[team].sort((a, b) => a - b);
+    }
+  }
+
+  hasTeamReachedCheckpoint(team, checkpointOrder) {
+    return this.teamCheckpoints[team].includes(checkpointOrder);
+  }
+
+  canTeamFinish(team) {
+    // In team mode with checkpoints, team must have all checkpoints
+    if (!this.settings.teamMode || !this.settings.enableCheckpoints) {
+      return true;
+    }
+    const totalCheckpoints = this.maze?.checkpoints?.length || 0;
+    return this.teamCheckpoints[team].length >= totalCheckpoints;
+  }
+
+  hasTeamFinished(team) {
+    const teamPlayers = this.getTeamPlayers(team);
+    if (teamPlayers.length === 0) return false;
+    return teamPlayers.every((player) => player.hasFinished);
+  }
+
+  allPlayersHaveTeam() {
+    if (!this.settings.teamMode) return true;
+    return this.getAllPlayers().every((player) => player.team !== null);
+  }
+
   resetToLobby() {
     // Reset room state to waiting (lobby)
     this.status = "waiting";
@@ -135,6 +182,8 @@ class Room {
     this.startTime = null;
     this.endTime = null;
     this.winner = null;
+    this.winningTeam = null;
+    this.teamCheckpoints = { A: [], B: [] };
 
     if (this.gameTimer) {
       clearInterval(this.gameTimer);
@@ -167,6 +216,8 @@ class Room {
       elapsedTime: this.getElapsedTime(),
       remainingTime: this.getRemainingTime(),
       winner: this.winner,
+      teamCheckpoints: this.teamCheckpoints,
+      winningTeam: this.winningTeam,
     };
   }
 

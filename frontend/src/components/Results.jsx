@@ -34,25 +34,139 @@ export default function Results() {
     }
   };
 
+  // Check if team mode
+  const isTeamMode = gameResults.teamMode;
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="max-w-5xl w-full">
         {/* Winner Announcement */}
-        <div className="text-center mb-8 animate-fade-in">
-          <Trophy className="w-20 h-20 text-yellow-400 mx-auto mb-4 animate-bounce-slow" />
-          <h1 className="text-6xl font-bold mb-4 bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 text-transparent bg-clip-text">
-            {gameResults.winner.username} Wins!
-          </h1>
-          <p className="text-xl text-blue-200">
-            Completed in {formatTime(gameResults.winner.completionTime)}
-          </p>
-        </div>
+        {!isTeamMode && (
+          <div className="text-center mb-8 animate-fade-in">
+            <Trophy className="w-20 h-20 text-yellow-400 mx-auto mb-4 animate-bounce-slow" />
+            <h1 className="text-6xl font-bold mb-4 bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 text-transparent bg-clip-text">
+              {gameResults.winner.username} Wins!
+            </h1>
+            <p className="text-xl text-blue-200">
+              Completed in {formatTime(gameResults.winner.completionTime)}
+            </p>
+          </div>
+        )}
+
+        {/* Team Victory Announcement */}
+        {isTeamMode && (
+          <div className="text-center mb-8 animate-fade-in">
+            <Trophy className="w-20 h-20 text-yellow-400 mx-auto mb-4 animate-bounce-slow" />
+            <h1 className={`text-6xl font-bold mb-4 bg-gradient-to-r ${
+              gameResults.winningTeam === 'A' 
+                ? 'from-blue-400 via-blue-500 to-blue-600' 
+                : 'from-red-400 via-red-500 to-red-600'
+            } text-transparent bg-clip-text`}>
+              Team {gameResults.winningTeam} Wins!
+            </h1>
+            <p className="text-xl text-blue-200">
+              All team members finished!
+            </p>
+          </div>
+        )}
 
         {/* Rankings */}
         <div className="glass p-8 rounded-2xl mb-6">
           <h2 className="text-3xl font-bold mb-6 text-center">Final Rankings</h2>
-          <div className="space-y-3">
-            {gameResults.rankings.map((player) => (
+          
+          {/* Team Mode Rankings */}
+          {isTeamMode && (
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Team A */}
+              <div className={`glass-dark p-6 rounded-xl border-2 ${
+                gameResults.winningTeam === 'A' ? 'border-blue-400 shadow-lg shadow-blue-500/50' : 'border-blue-500/30'
+              }`}>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-2xl font-bold text-blue-400">Team A</h3>
+                  {gameResults.winningTeam === 'A' && (
+                    <Trophy className="w-6 h-6 text-yellow-400" />
+                  )}
+                </div>
+                <div className="space-y-2 mb-4">
+                  {gameResults.teams.A.players.map((player, idx) => (
+                    <div
+                      key={player.playerId}
+                      className={`flex items-center gap-3 p-3 rounded-lg ${
+                        player.playerId === playerId
+                          ? 'bg-blue-500/40 border border-blue-400'
+                          : 'bg-blue-500/20'
+                      }`}
+                    >
+                      <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center font-bold">
+                        {idx + 1}
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-semibold">{player.username}</div>
+                        <div className="text-xs text-blue-200">
+                          {player.hasFinished ? `${formatTime(player.completionTime)} • ${player.moves} moves` : 'Did not finish'}
+                        </div>
+                      </div>
+                      {player.hasFinished && <span className="text-green-400">✓</span>}
+                    </div>
+                  ))}
+                </div>
+                <div className="text-sm text-blue-200 space-y-1">
+                  <div>Players: {gameResults.teams.A.statistics.totalPlayers}</div>
+                  <div>Finished: {gameResults.teams.A.statistics.finishers}/{gameResults.teams.A.statistics.totalPlayers}</div>
+                  {gameResults.teams.A.statistics.fastestTime && (
+                    <div>Fastest: {formatTime(gameResults.teams.A.statistics.fastestTime)}</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Team B */}
+              <div className={`glass-dark p-6 rounded-xl border-2 ${
+                gameResults.winningTeam === 'B' ? 'border-red-400 shadow-lg shadow-red-500/50' : 'border-red-500/30'
+              }`}>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-2xl font-bold text-red-400">Team B</h3>
+                  {gameResults.winningTeam === 'B' && (
+                    <Trophy className="w-6 h-6 text-yellow-400" />
+                  )}
+                </div>
+                <div className="space-y-2 mb-4">
+                  {gameResults.teams.B.players.map((player, idx) => (
+                    <div
+                      key={player.playerId}
+                      className={`flex items-center gap-3 p-3 rounded-lg ${
+                        player.playerId === playerId
+                          ? 'bg-red-500/40 border border-red-400'
+                          : 'bg-red-500/20'
+                      }`}
+                    >
+                      <div className="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center font-bold">
+                        {idx + 1}
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-semibold">{player.username}</div>
+                        <div className="text-xs text-red-200">
+                          {player.hasFinished ? `${formatTime(player.completionTime)} • ${player.moves} moves` : 'Did not finish'}
+                        </div>
+                      </div>
+                      {player.hasFinished && <span className="text-green-400">✓</span>}
+                    </div>
+                  ))}
+                </div>
+                <div className="text-sm text-red-200 space-y-1">
+                  <div>Players: {gameResults.teams.B.statistics.totalPlayers}</div>
+                  <div>Finished: {gameResults.teams.B.statistics.finishers}/{gameResults.teams.B.statistics.totalPlayers}</div>
+                  {gameResults.teams.B.statistics.fastestTime && (
+                    <div>Fastest: {formatTime(gameResults.teams.B.statistics.fastestTime)}</div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Individual Mode Rankings */}
+          {!isTeamMode && (
+            <div className="space-y-3">
+              {gameResults.rankings.map((player) => (
               <div
                 key={player.playerId}
                 className={`flex items-center gap-4 p-4 rounded-xl transition-all ${
@@ -103,39 +217,42 @@ export default function Results() {
                 </div>
               </div>
             ))}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Game Statistics */}
-        <div className="glass p-6 rounded-xl mb-6">
-          <h3 className="text-xl font-bold mb-4 text-center">Game Statistics</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-blue-400">
-                {gameResults.statistics.totalPlayers}
+        {!isTeamMode && (
+          <div className="glass p-6 rounded-xl mb-6">
+            <h3 className="text-xl font-bold mb-4 text-center">Game Statistics</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-blue-400">
+                  {gameResults.statistics.totalPlayers}
+                </div>
+                <div className="text-sm text-blue-200">Total Players</div>
               </div>
-              <div className="text-sm text-blue-200">Total Players</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-green-400">
-                {gameResults.statistics.finishers}
+              <div className="text-center">
+                <div className="text-3xl font-bold text-green-400">
+                  {gameResults.statistics.finishers}
+                </div>
+                <div className="text-sm text-blue-200">Finished</div>
               </div>
-              <div className="text-sm text-blue-200">Finished</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-purple-400">
-                {formatTime(gameResults.statistics.averageTime)}
+              <div className="text-center">
+                <div className="text-3xl font-bold text-purple-400">
+                  {formatTime(gameResults.statistics.averageTime)}
+                </div>
+                <div className="text-sm text-blue-200">Avg. Time</div>
               </div>
-              <div className="text-sm text-blue-200">Avg. Time</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-yellow-400">
-                {gameResults.statistics.averageMoves}
+              <div className="text-center">
+                <div className="text-3xl font-bold text-yellow-400">
+                  {gameResults.statistics.averageMoves}
+                </div>
+                <div className="text-sm text-blue-200">Avg. Moves</div>
               </div>
-              <div className="text-sm text-blue-200">Avg. Moves</div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Action Buttons */}
         <div className="flex gap-4">

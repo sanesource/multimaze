@@ -3,13 +3,21 @@ import { useGame } from '../context/GameContext';
 import { Copy, Check, Crown, User, LogOut, Play } from 'lucide-react';
 
 export default function Lobby() {
-  const { room, playerId, players, leaveRoom, toggleReady, startGame } = useGame();
+  const { room, playerId, players, leaveRoom, toggleReady, selectTeam, startGame } = useGame();
   const [copied, setCopied] = useState(false);
   const [isReady, setIsReady] = useState(false);
 
   const isHost = playerId === room.hostId;
   const allReady = players.length > 0 && players.every(p => p.isReady);
   const currentPlayer = players.find(p => p.playerId === playerId);
+  
+  // Team mode specific
+  const isTeamMode = room.settings.teamMode;
+  const allPlayersHaveTeam = isTeamMode ? players.every(p => p.team !== null) : true;
+  const teamAPlayers = players.filter(p => p.team === 'A');
+  const teamBPlayers = players.filter(p => p.team === 'B');
+  const unassignedPlayers = players.filter(p => p.team === null);
+  const bothTeamsHavePlayers = isTeamMode ? (teamAPlayers.length > 0 && teamBPlayers.length > 0) : true;
 
   // Sync local ready state with server state
   React.useEffect(() => {
@@ -34,6 +42,10 @@ export default function Lobby() {
     if (isHost) {
       startGame();
     }
+  };
+
+  const handleSelectTeam = (team) => {
+    selectTeam(team);
   };
 
   const difficultyInfo = {
@@ -115,45 +127,178 @@ export default function Lobby() {
 
           {/* Players List */}
           <div className="md:col-span-2 glass p-6 rounded-xl">
-            <h3 className="text-lg font-bold mb-4">
-              Players ({room.playerCount}/{room.settings.maxPlayers})
-            </h3>
-            <div className="space-y-3 mb-6">
-              {players.map((player) => (
-                <div
-                  key={player.playerId}
-                  className={`flex items-center gap-3 p-4 rounded-lg transition-colors ${
-                    player.playerId === playerId
-                      ? 'bg-blue-500/30 border-2 border-blue-400'
-                      : 'glass-dark'
-                  }`}
-                >
-                  <div className={`p-2 rounded-full ${
-                    player.isReady ? 'bg-green-500/30' : 'bg-gray-500/30'
-                  }`}>
-                    <User className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold">{player.username}</span>
-                      {player.playerId === room.hostId && (
-                        <Crown className="w-4 h-4 text-yellow-400" />
-                      )}
-                      {player.playerId === playerId && (
-                        <span className="text-xs px-2 py-1 bg-blue-500/30 rounded">You</span>
+            {!isTeamMode && (
+              <>
+                <h3 className="text-lg font-bold mb-4">
+                  Players ({room.playerCount}/{room.settings.maxPlayers})
+                </h3>
+                <div className="space-y-3 mb-6">
+                  {players.map((player) => (
+                    <div
+                      key={player.playerId}
+                      className={`flex items-center gap-3 p-4 rounded-lg transition-colors ${
+                        player.playerId === playerId
+                          ? 'bg-blue-500/30 border-2 border-blue-400'
+                          : 'glass-dark'
+                      }`}
+                    >
+                      <div className={`p-2 rounded-full ${
+                        player.isReady ? 'bg-green-500/30' : 'bg-gray-500/30'
+                      }`}>
+                        <User className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold">{player.username}</span>
+                          {player.playerId === room.hostId && (
+                            <Crown className="w-4 h-4 text-yellow-400" />
+                          )}
+                          {player.playerId === playerId && (
+                            <span className="text-xs px-2 py-1 bg-blue-500/30 rounded">You</span>
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        {player.isReady ? (
+                          <span className="text-sm text-green-400 font-medium">Ready</span>
+                        ) : (
+                          <span className="text-sm text-gray-400">Not Ready</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {isTeamMode && (
+              <>
+                <h3 className="text-lg font-bold mb-4">
+                  Team Selection ({room.playerCount}/{room.settings.maxPlayers})
+                </h3>
+                
+                <div className="grid md:grid-cols-2 gap-4 mb-6">
+                  {/* Team A */}
+                  <div className="glass-dark p-4 rounded-lg border-2 border-blue-500/50">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-bold text-blue-400">Team A</h4>
+                      <span className="text-sm text-blue-300">({teamAPlayers.length})</span>
+                    </div>
+                    <div className="space-y-2">
+                      {teamAPlayers.map((player) => (
+                        <div
+                          key={player.playerId}
+                          className={`flex items-center gap-2 p-2 rounded ${
+                            player.playerId === playerId
+                              ? 'bg-blue-500/40 border border-blue-400'
+                              : 'bg-blue-500/20'
+                          }`}
+                        >
+                          <User className="w-4 h-4" />
+                          <span className="text-sm flex-1">{player.username}</span>
+                          {player.playerId === room.hostId && (
+                            <Crown className="w-3 h-3 text-yellow-400" />
+                          )}
+                          {player.isReady && <span className="text-xs text-green-400">✓</span>}
+                        </div>
+                      ))}
+                      {teamAPlayers.length === 0 && (
+                        <div className="text-sm text-gray-400 text-center py-2">No players yet</div>
                       )}
                     </div>
                   </div>
-                  <div>
-                    {player.isReady ? (
-                      <span className="text-sm text-green-400 font-medium">Ready</span>
-                    ) : (
-                      <span className="text-sm text-gray-400">Not Ready</span>
-                    )}
+
+                  {/* Team B */}
+                  <div className="glass-dark p-4 rounded-lg border-2 border-red-500/50">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-bold text-red-400">Team B</h4>
+                      <span className="text-sm text-red-300">({teamBPlayers.length})</span>
+                    </div>
+                    <div className="space-y-2">
+                      {teamBPlayers.map((player) => (
+                        <div
+                          key={player.playerId}
+                          className={`flex items-center gap-2 p-2 rounded ${
+                            player.playerId === playerId
+                              ? 'bg-red-500/40 border border-red-400'
+                              : 'bg-red-500/20'
+                          }`}
+                        >
+                          <User className="w-4 h-4" />
+                          <span className="text-sm flex-1">{player.username}</span>
+                          {player.playerId === room.hostId && (
+                            <Crown className="w-3 h-3 text-yellow-400" />
+                          )}
+                          {player.isReady && <span className="text-xs text-green-400">✓</span>}
+                        </div>
+                      ))}
+                      {teamBPlayers.length === 0 && (
+                        <div className="text-sm text-gray-400 text-center py-2">No players yet</div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              ))}
-            </div>
+
+                {/* Unassigned Players */}
+                {unassignedPlayers.length > 0 && (
+                  <div className="glass-dark p-4 rounded-lg border-2 border-gray-500/50 mb-4">
+                    <h4 className="font-bold text-gray-400 mb-3">Unassigned ({unassignedPlayers.length})</h4>
+                    <div className="space-y-2">
+                      {unassignedPlayers.map((player) => (
+                        <div
+                          key={player.playerId}
+                          className={`flex items-center gap-2 p-2 rounded ${
+                            player.playerId === playerId
+                              ? 'bg-gray-500/40 border border-gray-400'
+                              : 'bg-gray-500/20'
+                          }`}
+                        >
+                          <User className="w-4 h-4" />
+                          <span className="text-sm flex-1">{player.username}</span>
+                          {player.playerId === room.hostId && (
+                            <Crown className="w-3 h-3 text-yellow-400" />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Team Selection Buttons */}
+                {currentPlayer && currentPlayer.team === null && (
+                  <div className="flex gap-3 mb-4">
+                    <button
+                      onClick={() => handleSelectTeam('A')}
+                      className="flex-1 px-4 py-3 rounded-lg bg-gradient-to-r from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 font-semibold transition-all transform hover:scale-105"
+                    >
+                      Join Team A
+                    </button>
+                    <button
+                      onClick={() => handleSelectTeam('B')}
+                      className="flex-1 px-4 py-3 rounded-lg bg-gradient-to-r from-red-400 to-red-600 hover:from-red-500 hover:to-red-700 font-semibold transition-all transform hover:scale-105"
+                    >
+                      Join Team B
+                    </button>
+                  </div>
+                )}
+
+                {currentPlayer && currentPlayer.team !== null && (
+                  <div className="flex gap-3 mb-4">
+                    <button
+                      onClick={() => handleSelectTeam(currentPlayer.team === 'A' ? 'B' : 'A')}
+                      className={`flex-1 px-4 py-3 rounded-lg font-semibold transition-all transform hover:scale-105 ${
+                        currentPlayer.team === 'A'
+                          ? 'bg-gradient-to-r from-red-400 to-red-600 hover:from-red-500 hover:to-red-700'
+                          : 'bg-gradient-to-r from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700'
+                      }`}
+                    >
+                      Switch to Team {currentPlayer.team === 'A' ? 'B' : 'A'}
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+
 
             {/* Action Buttons */}
             <div className="flex gap-3">
@@ -181,7 +326,7 @@ export default function Lobby() {
               {isHost && (
                 <button
                   onClick={handleStartGame}
-                  disabled={room.playerCount === 0 || !allReady}
+                  disabled={room.playerCount === 0 || !allReady || (isTeamMode && (!allPlayersHaveTeam || !bothTeamsHavePlayers))}
                   className="flex-1 px-6 py-3 rounded-lg bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 font-semibold transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
                 >
                   <Play className="w-5 h-5" />
@@ -192,7 +337,13 @@ export default function Lobby() {
 
             {isHost && (
               <p className="text-sm text-blue-200 text-center mt-4">
-                {allReady ? 'All players are ready. You can start the game.' : 'Waiting for all players to ready up.'}
+                {isTeamMode && !allPlayersHaveTeam
+                  ? 'Waiting for all players to select a team.'
+                  : isTeamMode && !bothTeamsHavePlayers
+                  ? 'Both Team A and Team B must have at least one player.'
+                  : allReady
+                  ? 'All players are ready. You can start the game.'
+                  : 'Waiting for all players to ready up.'}
               </p>
             )}
           </div>

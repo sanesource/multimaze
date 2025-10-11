@@ -13,6 +13,7 @@ export default function Home() {
   const [maxPlayers, setMaxPlayers] = useState(4);
   const [enableCheckpoints, setEnableCheckpoints] = useState(false);
   const [tunnelMode, setTunnelMode] = useState(false);
+  const [teamMode, setTeamMode] = useState(false);
 
   const handleCreateRoom = (e) => {
     e.preventDefault();
@@ -22,8 +23,9 @@ export default function Home() {
       difficulty,
       timerDuration: parseInt(timerDuration),
       maxPlayers: parseInt(maxPlayers),
-      enableCheckpoints,
+      enableCheckpoints: teamMode ? true : enableCheckpoints, // Team mode forces checkpoints
       tunnelMode,
+      teamMode,
     });
   };
 
@@ -153,16 +155,32 @@ export default function Home() {
               <div className="flex items-center gap-3 p-4 rounded-lg glass-dark border border-white/20">
                 <input
                   type="checkbox"
-                  id="enableCheckpoints"
-                  checked={enableCheckpoints}
-                  onChange={(e) => setEnableCheckpoints(e.target.checked)}
-                  className="w-5 h-5 rounded border-white/20 bg-white/10 text-blue-500 focus:ring-2 focus:ring-blue-400 cursor-pointer"
+                  id="teamMode"
+                  checked={teamMode}
+                  onChange={(e) => setTeamMode(e.target.checked)}
+                  className="w-5 h-5 rounded border-white/20 bg-white/10 text-purple-500 focus:ring-2 focus:ring-purple-400 cursor-pointer"
                 />
-                <label htmlFor="enableCheckpoints" className="flex-1 cursor-pointer">
-                  <div className="font-medium">Enable Checkpoints</div>
-                  <div className="text-sm text-blue-200">Players must reach 3 checkpoints in order before the final goal</div>
+                <label htmlFor="teamMode" className="flex-1 cursor-pointer">
+                  <div className="font-medium">🏆 Team Mode</div>
+                  <div className="text-sm text-blue-200">Players join Team A or B and race together with shared checkpoints</div>
                 </label>
               </div>
+
+              {!teamMode && (
+                <div className="flex items-center gap-3 p-4 rounded-lg glass-dark border border-white/20">
+                  <input
+                    type="checkbox"
+                    id="enableCheckpoints"
+                    checked={enableCheckpoints}
+                    onChange={(e) => setEnableCheckpoints(e.target.checked)}
+                    className="w-5 h-5 rounded border-white/20 bg-white/10 text-blue-500 focus:ring-2 focus:ring-blue-400 cursor-pointer"
+                  />
+                  <label htmlFor="enableCheckpoints" className="flex-1 cursor-pointer">
+                    <div className="font-medium">Enable Checkpoints</div>
+                    <div className="text-sm text-blue-200">Players must reach 3 checkpoints in order before the final goal</div>
+                  </label>
+                </div>
+              )}
 
               <div className="flex items-center gap-3 p-4 glass-dark rounded-lg">
                 <input

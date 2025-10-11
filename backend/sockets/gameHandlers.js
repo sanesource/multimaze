@@ -29,6 +29,7 @@ class GameHandlers {
     );
     socket.on("leave-room", () => this.onLeaveRoom(socket));
     socket.on("player-ready", (data) => this.onPlayerReady(socket, data));
+    socket.on("select-team", (data) => this.onSelectTeam(socket, data));
     socket.on("start-game", () => this.onStartGame(socket));
     socket.on("restart-room", () => this.onRestartRoom(socket));
     socket.on("player-move", (data) => this.onPlayerMove(socket, data));
@@ -242,6 +243,53 @@ class GameHandlers {
   }
 
   /**
+   * Select team (team mode only)
+   */
+  onSelectTeam(socket, data) {
+    try {
+      const { playerId, roomId } = socket.data;
+      const { team } = data;
+
+      const room = roomManager.getRoom(roomId);
+      if (!room) return;
+
+      // Validate team mode is enabled
+      if (!room.settings.teamMode) {
+        return socket.emit("error", {
+          message: "Team selection is only available in team mode",
+        });
+      }
+
+      // Validate game is in waiting state
+      if (room.status !== "waiting") {
+        return socket.emit("error", {
+          message: "Cannot change team after game has started",
+        });
+      }
+
+      // Validate team value
+      if (team !== "A" && team !== "B") {
+        return socket.emit("error", {
+          message: "Invalid team selection",
+        });
+      }
+
+      const player = room.getPlayer(playerId);
+      if (!player) return;
+
+      player.setTeam(team);
+      room.updateActivity();
+
+      console.log(`${player.username} joined Team ${team}`);
+
+      // Notify room
+      this.io.to(roomId).emit("room-updated", room.toJSON());
+    } catch (error) {
+      console.error("Error selecting team:", error);
+    }
+  }
+
+  /**
    * Start game
    */
   onStartGame(socket) {
@@ -271,13 +319,49 @@ class GameHandlers {
         });
       }
 
+      // In team mode, validate all players have selected a team
+      if (room.settings.teamMode) {
+        if (!room.allPlayersHaveTeam()) {
+          return socket.emit("error", {
+            message: "All players must select a team before starting",
+          });
+        }
+
+        // Validate both teams have at least one player
+        const teamACount = room.getTeamCount("A");
+        const teamBCount = room.getTeamCount("B");
+        
+        if (teamACount === 0 || teamBCount === 0) {
+          return socket.emit("error", {
+            message: "Both Team A and Team B must have at least one player",
+          });
+        }
+      }
+
+      // Calculate checkpoint count for team mode
+      let checkpointCount = 3; // Default
+      let enableCheckpoints = room.settings.enableCheckpoints;
+      
+      if (room.settings.teamMode) {
+        // Team mode always enables checkpoints
+        enableCheckpoints = true;
+        // Checkpoint count = max team size
+        const teamACount = room.getTeamCount("A");
+        const teamBCount = room.getTeamCount("B");
+        checkpointCount = Math.max(teamACount, teamBCount);
+      }
+
       // Generate maze
       const maze = mazeGenerator.generate(
         room.settings.difficulty,
         room.settings.maxPlayers,
-        room.settings.enableCheckpoints
+        enableCheckpoints,
+        checkpointCount
       );
       room.setMaze(maze);
+
+      // Initialize team checkpoints
+      room.teamCheckpoints = { A: [], B: [] };
 
       // Assign start positions to players
       const players = room.getAllPlayers();
@@ -290,7 +374,7 @@ class GameHandlers {
       // Start game
       room.startGame();
 
-      console.log(`Game started in room: ${roomId}`);
+      console.log(`Game started in room: ${roomId} (Team mode: ${room.settings.teamMode}, Checkpoints: ${checkpointCount})`);
 
       // Notify all players
       this.io.to(roomId).emit("game-started", room.toJSON());
@@ -389,35 +473,70 @@ class GameHandlers {
       room.updateActivity();
 
       // Check if reached a checkpoint
-      if (room.settings.enableCheckpoints && room.maze.checkpoints.length > 0) {
+      if ((room.settings.enableCheckpoints || room.settings.teamMode) && room.maze.checkpoints.length > 0) {
         const checkpoint = room.maze.checkpoints.find(
           (cp) => cp.x === newX && cp.y === newY
         );
 
         if (checkpoint) {
-          // Check if this is the next checkpoint in order
-          if (checkpoint.order === player.nextCheckpoint) {
-            player.reachCheckpoint(checkpoint.order);
-            console.log(
-              `${player.username} reached checkpoint ${checkpoint.order}`
-            );
+          // Team mode: shared checkpoints
+          if (room.settings.teamMode && player.team) {
+            // Check if team hasn't reached this checkpoint yet
+            if (!room.hasTeamReachedCheckpoint(player.team, checkpoint.order)) {
+              room.addTeamCheckpoint(player.team, checkpoint.order);
+              console.log(
+                `${player.username} (Team ${player.team}) reached checkpoint ${checkpoint.order} for their team`
+              );
 
-            // Notify the room
-            this.io.to(roomId).emit("checkpoint-reached", {
-              playerId: player.playerId,
-              username: player.username,
-              checkpointOrder: checkpoint.order,
-              nextCheckpoint: player.nextCheckpoint,
-            });
+              // Notify the room about team checkpoint
+              this.io.to(roomId).emit("team-checkpoint-reached", {
+                team: player.team,
+                checkpointOrder: checkpoint.order,
+                playerId: player.playerId,
+                username: player.username,
+              });
+            }
+          } else {
+            // Individual mode: each player tracks their own
+            if (checkpoint.order === player.nextCheckpoint) {
+              player.reachCheckpoint(checkpoint.order);
+              console.log(
+                `${player.username} reached checkpoint ${checkpoint.order}`
+              );
+
+              // Notify the room
+              this.io.to(roomId).emit("checkpoint-reached", {
+                playerId: player.playerId,
+                username: player.username,
+                checkpointOrder: checkpoint.order,
+                nextCheckpoint: player.nextCheckpoint,
+              });
+            }
           }
         }
       }
 
       // Check if reached endpoint
       if (newX === room.maze.endpoint.x && newY === room.maze.endpoint.y) {
-        // If checkpoints are enabled, validate that player has reached all checkpoints
-        const canFinish =
-          !room.settings.enableCheckpoints || player.canFinish();
+        // Validate finish conditions
+        let canFinish = true;
+        let errorMessage = "";
+
+        if (room.settings.teamMode && player.team) {
+          // Team mode: check if team has all checkpoints
+          canFinish = room.canTeamFinish(player.team);
+          if (!canFinish) {
+            const teamCheckpoints = room.getTeamCheckpoints(player.team).length;
+            const totalCheckpoints = room.maze?.checkpoints?.length || 0;
+            errorMessage = `Your team must reach all checkpoints first! (${teamCheckpoints}/${totalCheckpoints})`;
+          }
+        } else if (room.settings.enableCheckpoints) {
+          // Individual mode: check if player has all checkpoints
+          canFinish = player.canFinish();
+          if (!canFinish) {
+            errorMessage = `You must reach all checkpoints first! (${player.checkpointsReached.length}/3)`;
+          }
+        }
 
         if (canFinish) {
           const completionTime = room.getElapsedTime();
@@ -430,26 +549,44 @@ class GameHandlers {
             playerId: player.playerId,
             username: player.username,
             completionTime,
+            team: player.team,
           });
 
-          // Check if this was the first finisher
-          if (!room.winner) {
-            room.setWinner(player.playerId);
-            this.io.to(roomId).emit("winner-announced", {
-              playerId: player.playerId,
-              username: player.username,
-            });
-          }
+          // Team mode: check for team victory
+          if (room.settings.teamMode && player.team) {
+            if (room.hasTeamFinished(player.team)) {
+              // This team has won!
+              room.winningTeam = player.team;
+              console.log(`Team ${player.team} wins!`);
+              
+              this.io.to(roomId).emit("team-victory", {
+                winningTeam: player.team,
+              });
 
-          // Check if all players finished
-          const allFinished = room.getAllPlayers().every((p) => p.hasFinished);
-          if (allFinished) {
-            this.endGame(room);
+              // End the game
+              this.endGame(room);
+            }
+          } else {
+            // Individual mode
+            // Check if this was the first finisher
+            if (!room.winner) {
+              room.setWinner(player.playerId);
+              this.io.to(roomId).emit("winner-announced", {
+                playerId: player.playerId,
+                username: player.username,
+              });
+            }
+
+            // Check if all players finished
+            const allFinished = room.getAllPlayers().every((p) => p.hasFinished);
+            if (allFinished) {
+              this.endGame(room);
+            }
           }
         } else {
-          // Player tried to finish without all checkpoints
+          // Player tried to finish without meeting requirements
           socket.emit("error", {
-            message: `You must reach all checkpoints first! (${player.checkpointsReached.length}/3)`,
+            message: errorMessage,
           });
         }
       } else {
