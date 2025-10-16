@@ -62,39 +62,39 @@ export default function Lobby() {
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="max-w-4xl w-full">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 text-transparent bg-clip-text">
+        <div className="text-center mb-6 md:mb-8">
+          <h1 className="text-3xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 text-transparent bg-clip-text">
             Game Lobby
           </h1>
-          <p className="text-blue-200">Waiting for players...</p>
+          <p className="text-sm md:text-base text-blue-200">Waiting for players...</p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
           {/* Room Info */}
           <div className="md:col-span-1 space-y-4">
             {/* Room Code */}
-            <div className="glass p-6 rounded-xl">
+            <div className="glass p-4 md:p-6 rounded-xl">
               <h3 className="text-sm font-medium text-blue-200 mb-3">Room Code</h3>
               <div className="flex items-center gap-2">
-                <div className="flex-1 text-3xl font-mono font-bold tracking-wider text-center py-3 glass-dark rounded-lg">
+                <div className="flex-1 text-2xl md:text-3xl font-mono font-bold tracking-wider text-center py-2 md:py-3 glass-dark rounded-lg">
                   {room.roomId}
                 </div>
                 <button
                   onClick={copyRoomCode}
-                  className="p-3 glass-dark hover:bg-white/20 rounded-lg transition-colors"
+                  className="p-2 md:p-3 glass-dark hover:bg-white/20 rounded-lg transition-colors"
                   title="Copy room code"
                 >
                   {copied ? (
-                    <Check className="w-6 h-6 text-green-400" />
+                    <Check className="w-5 h-5 md:w-6 md:h-6 text-green-400" />
                   ) : (
-                    <Copy className="w-6 h-6" />
+                    <Copy className="w-5 h-5 md:w-6 md:h-6" />
                   )}
                 </button>
               </div>
             </div>
 
             {/* Game Settings */}
-            <div className="glass p-6 rounded-xl">
+            <div className="glass p-4 md:p-6 rounded-xl">
               <h3 className="text-sm font-medium text-blue-200 mb-4">Game Settings</h3>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between items-center">
@@ -126,7 +126,7 @@ export default function Lobby() {
           </div>
 
           {/* Players List */}
-          <div className="md:col-span-2 glass p-6 rounded-xl">
+          <div className="md:col-span-2 glass p-4 md:p-6 rounded-xl">
             {!isTeamMode && (
               <>
                 <h3 className="text-lg font-bold mb-4">
@@ -173,11 +173,11 @@ export default function Lobby() {
 
             {isTeamMode && (
               <>
-                <h3 className="text-lg font-bold mb-4">
+                <h3 className="text-base md:text-lg font-bold mb-4">
                   Team Selection ({room.playerCount}/{room.settings.maxPlayers})
                 </h3>
                 
-                <div className="grid md:grid-cols-2 gap-4 mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                   {/* Team A */}
                   <div className="glass-dark p-4 rounded-lg border-2 border-blue-500/50">
                     <div className="flex items-center justify-between mb-3">
@@ -266,7 +266,7 @@ export default function Lobby() {
 
                 {/* Team Selection Buttons */}
                 {currentPlayer && currentPlayer.team === null && (
-                  <div className="flex gap-3 mb-4">
+                  <div className="flex flex-col md:flex-row gap-3 mb-4">
                     <button
                       onClick={() => handleSelectTeam('A')}
                       className="flex-1 px-4 py-3 rounded-lg bg-gradient-to-r from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 font-semibold transition-all transform hover:scale-105"
@@ -301,19 +301,19 @@ export default function Lobby() {
 
 
             {/* Action Buttons */}
-            <div className="flex gap-3">
+            <div className="flex flex-col md:flex-row gap-3">
               <button
                 onClick={leaveRoom}
-                className="px-6 py-3 rounded-lg glass-dark hover:bg-red-500/20 transition-colors flex items-center gap-2"
+                className="px-4 md:px-6 py-3 rounded-lg glass-dark hover:bg-red-500/20 transition-colors flex items-center justify-center gap-2"
               >
                 <LogOut className="w-5 h-5" />
-                Leave Room
+                <span className="md:inline">Leave Room</span>
               </button>
 
               {!isHost && (
                 <button
                   onClick={handleReadyToggle}
-                  className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all transform hover:scale-105 ${
+                  className={`flex-1 px-4 md:px-6 py-3 rounded-lg font-semibold transition-all transform hover:scale-105 ${
                     isReady
                       ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600'
                       : 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600'
@@ -327,7 +327,7 @@ export default function Lobby() {
                 <button
                   onClick={handleStartGame}
                   disabled={room.playerCount === 0 || !allReady || (isTeamMode && (!allPlayersHaveTeam || !bothTeamsHavePlayers))}
-                  className="flex-1 px-6 py-3 rounded-lg bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 font-semibold transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
+                  className="flex-1 px-4 md:px-6 py-3 rounded-lg bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 font-semibold transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
                 >
                   <Play className="w-5 h-5" />
                   Start Game

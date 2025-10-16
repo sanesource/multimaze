@@ -40,14 +40,14 @@ export default function Home() {
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="max-w-6xl w-full">
         {/* Logo and Title */}
-        <div className="text-center mb-12 animate-fade-in">
+        <div className="text-center mb-8 md:mb-12 animate-fade-in">
           <div className="flex items-center justify-center mb-4">
-            <Gamepad2 className="w-20 h-20 text-blue-400 animate-bounce-slow" />
+            <Gamepad2 className="w-16 h-16 md:w-20 md:h-20 text-blue-400 animate-bounce-slow" />
           </div>
-          <h1 className="text-7xl font-bold mb-4 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 text-transparent bg-clip-text">
+          <h1 className="text-4xl md:text-7xl font-bold mb-4 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 text-transparent bg-clip-text">
             MultiMaze
           </h1>
-          <p className="text-xl text-blue-200">
+          <p className="text-base md:text-xl text-blue-200">
             Race through mazes with friends in real-time!
           </p>
         </div>
@@ -90,9 +90,9 @@ export default function Home() {
 
         {/* Create Room Form */}
         {showCreate && (
-          <div className="max-w-4xl mx-auto glass p-8 rounded-2xl animate-fade-in">
-            <h2 className="text-3xl font-bold mb-6 text-center">Create Room</h2>
-            <form onSubmit={handleCreateRoom} className="space-y-6">
+          <div className="max-w-4xl mx-auto glass p-4 md:p-8 rounded-2xl animate-fade-in">
+            <h2 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6 text-center">Create Room</h2>
+            <form onSubmit={handleCreateRoom} className="space-y-4 md:space-y-6">
               {/* Username - Full Width */}
               <div>
                 <label className="block text-sm font-medium mb-2">Username</label>
@@ -107,7 +107,7 @@ export default function Home() {
                 />
               </div>
 
-              {/* Game Settings - 3 Columns */}
+              {/* Game Settings - 3 Columns on desktop, 1 on mobile */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">Difficulty</label>
@@ -226,8 +226,8 @@ export default function Home() {
 
         {/* Join Room Form */}
         {showJoin && (
-          <div className="max-w-md mx-auto glass p-8 rounded-2xl animate-fade-in">
-            <h2 className="text-3xl font-bold mb-6 text-center">Join Room</h2>
+          <div className="max-w-md mx-auto glass p-4 md:p-8 rounded-2xl animate-fade-in">
+            <h2 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6 text-center">Join Room</h2>
             <form onSubmit={handleJoinRoom} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-2">Username</label>
@@ -276,21 +276,21 @@ export default function Home() {
 
         {/* Features */}
         {!showCreate && !showJoin && (
-          <div className="mt-16 grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            <div className="glass p-6 rounded-xl text-center">
-              <Trophy className="w-10 h-10 mb-3 text-yellow-400 mx-auto" />
+          <div className="mt-8 md:mt-16 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 max-w-4xl mx-auto">
+            <div className="glass p-4 md:p-6 rounded-xl text-center">
+              <Trophy className="w-8 h-8 md:w-10 md:h-10 mb-3 text-yellow-400 mx-auto" />
               <h3 className="font-bold mb-2">Competitive</h3>
               <p className="text-sm text-blue-200">Race against friends and climb the rankings</p>
             </div>
-            <div className="glass p-6 rounded-xl text-center">
-              <Zap className="w-10 h-10 mb-3 text-blue-400 mx-auto" />
+            <div className="glass p-4 md:p-6 rounded-xl text-center">
+              <Zap className="w-8 h-8 md:w-10 md:h-10 mb-3 text-blue-400 mx-auto" />
               <h3 className="font-bold mb-2">Real-time</h3>
               <p className="text-sm text-blue-200">Synchronized gameplay across all players</p>
             </div>
-            <div className="glass p-6 rounded-xl text-center">
-              <Gamepad2 className="w-10 h-10 mb-3 text-purple-400 mx-auto" />
+            <div className="glass p-4 md:p-6 rounded-xl text-center">
+              <Gamepad2 className="w-8 h-8 md:w-10 md:h-10 mb-3 text-purple-400 mx-auto" />
               <h3 className="font-bold mb-2">Simple Controls</h3>
-              <p className="text-sm text-blue-200">Use arrow keys or WASD to navigate</p>
+              <p className="text-sm text-blue-200">Use arrow keys, WASD, or touch controls</p>
             </div>
           </div>
         )}

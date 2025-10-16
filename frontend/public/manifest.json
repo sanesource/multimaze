@@ -1,0 +1,22 @@
+{
+  "name": "MultiMaze - Multiplayer Maze Game",
+  "short_name": "MultiMaze",
+  "description": "Race through mazes with friends in real-time! Multiplayer maze game with touch controls.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["games", "entertainment"],
+  "screenshots": [],
+  "related_applications": [],
+  "prefer_related_applications": false
+}

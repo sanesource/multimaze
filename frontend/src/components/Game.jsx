@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useGame } from '../context/GameContext';
-import { Clock, Users, Trophy, Zap } from 'lucide-react';
+import { Clock, Users, Trophy, Zap, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react';
 
 export default function Game() {
   const { maze, playerId, players, playerPositions, timer, movePlayer, room, lightningCharges, lightningActive, useLightning } = useGame();
@@ -12,9 +12,24 @@ export default function Game() {
   const [activeKeys, setActiveKeys] = useState(new Set());
   const [lightningCountdown, setLightningCountdown] = useState(0);
   const lightningTimerRef = useRef(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const moveIntervalRef = useRef(null);
+  const moveDirectionRef = useRef(null);
   
   const currentPlayer = players.find(p => p.playerId === playerId);
   const currentPosition = playerPositions[playerId] || currentPlayer?.position || { x: 0, y: 0 };
+
+  // Detect mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+      setIsMobile(mobile);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Lightning countdown timer
   useEffect(() => {
@@ -156,6 +171,57 @@ export default function Game() {
     });
   }, [players, playerPositions]);
 
+  // Handle mobile touch controls with continuous movement
+  const startMobileMove = (direction) => {
+    // Clear any existing interval
+    if (moveIntervalRef.current) {
+      clearInterval(moveIntervalRef.current);
+    }
+    
+    // Set the direction and visual feedback
+    moveDirectionRef.current = direction;
+    setActiveKeys(prev => new Set(prev).add(direction));
+    
+    // Move immediately
+    movePlayer(direction);
+    
+    // Set up continuous movement (move every 150ms while held)
+    moveIntervalRef.current = setInterval(() => {
+      if (moveDirectionRef.current === direction) {
+        movePlayer(direction);
+      }
+    }, 150);
+  };
+
+  const stopMobileMove = (direction) => {
+    // Clear the interval
+    if (moveIntervalRef.current) {
+      clearInterval(moveIntervalRef.current);
+      moveIntervalRef.current = null;
+    }
+    
+    // Clear the direction
+    if (moveDirectionRef.current === direction) {
+      moveDirectionRef.current = null;
+    }
+    
+    // Remove visual feedback
+    setActiveKeys(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(direction);
+      return newSet;
+    });
+  };
+
+  // Cleanup intervals on unmount
+  useEffect(() => {
+    return () => {
+      if (moveIntervalRef.current) {
+        clearInterval(moveIntervalRef.current);
+      }
+    };
+  }, []);
+
   // Calculate cell size based on available viewport
   useEffect(() => {
     if (!maze || !canvasRef.current) return;
@@ -164,10 +230,10 @@ export default function Game() {
       const canvas = canvasRef.current;
       if (!canvas) return;
       
-      // Account for header (~80px) + padding + controls (~40px)
-      const headerHeight = 100;
-      const controlsHeight = 50;
-      const padding = 32;
+      // Account for header and controls with mobile-specific adjustments
+      const headerHeight = isMobile ? 80 : 100;
+      const controlsHeight = isMobile ? 160 : 50; // More space for touch controls
+      const padding = isMobile ? 16 : 32;
       
       const availableWidth = window.innerWidth - padding;
       const availableHeight = window.innerHeight - headerHeight - controlsHeight - padding;
@@ -176,7 +242,10 @@ export default function Game() {
       const cellHeight = Math.floor(availableHeight / maze.dimensions.height);
       
       // Use larger cells with good minimum, but cap at reasonable size
-      const size = Math.max(Math.min(cellWidth, cellHeight, 50), 20);
+      // On mobile, allow smaller cells to fit the maze
+      const maxSize = isMobile ? 40 : 50;
+      const minSize = isMobile ? 12 : 20;
+      const size = Math.max(Math.min(cellWidth, cellHeight, maxSize), minSize);
 
       setCellSize(size);
       canvas.width = maze.dimensions.width * size;
@@ -188,7 +257,7 @@ export default function Game() {
     // Recalculate on window resize
     window.addEventListener('resize', calculateSize);
     return () => window.removeEventListener('resize', calculateSize);
-  }, [maze]);
+  }, [maze, isMobile]);
 
   // Animated rendering with smooth interpolation
   useEffect(() => {
@@ -790,22 +859,22 @@ export default function Game() {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-      {/* Unified Header */}
-      <div className="glass m-2 p-3 rounded-xl shadow-lg">
-        <div className="flex items-center justify-between gap-4 flex-wrap">
+      {/* Unified Header - Mobile Responsive */}
+      <div className="glass m-2 p-2 md:p-3 rounded-xl shadow-lg">
+        <div className="flex items-center justify-between gap-2 md:gap-4 flex-wrap">
           {/* Timer - Left */}
-          <div className="flex items-center gap-3">
-            <Clock className={`w-7 h-7 ${getTimerColor()}`} />
+          <div className="flex items-center gap-2 md:gap-3">
+            <Clock className={`w-5 h-5 md:w-7 md:h-7 ${getTimerColor()}`} />
             <div>
-              <div className={`text-2xl font-bold font-mono ${getTimerColor()}`}>
+              <div className={`text-lg md:text-2xl font-bold font-mono ${getTimerColor()}`}>
                 {formatTime(timer.remaining)}
               </div>
-              <div className="text-xs text-blue-200">Time Left</div>
+              <div className="text-xs text-blue-200 hidden md:block">Time Left</div>
             </div>
           </div>
 
-          {/* Players Status - Center */}
-          <div className="flex-1 flex gap-2 justify-center overflow-x-auto px-4 max-w-3xl scrollbar-hide">
+          {/* Players Status - Center (Hidden on mobile) */}
+          <div className="hidden md:flex flex-1 gap-2 justify-center overflow-x-auto px-4 max-w-3xl scrollbar-hide">
             {players.map((player, index) => {
               const colors = [
                 'bg-gradient-to-br from-blue-400 to-blue-600',
@@ -852,29 +921,29 @@ export default function Game() {
           </div>
 
           {/* Stats - Right */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-blue-400" />
+          <div className="flex items-center gap-2 md:gap-4">
+            <div className="flex items-center gap-1 md:gap-2">
+              <Users className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />
               <div className="text-center">
-                <div className="text-lg font-bold leading-none">{activePlayers.length}</div>
-                <div className="text-xs text-blue-200">Active</div>
+                <div className="text-sm md:text-lg font-bold leading-none">{activePlayers.length}</div>
+                <div className="text-xs text-blue-200 hidden md:block">Active</div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Trophy className="w-5 h-5 text-yellow-400" />
+            <div className="flex items-center gap-1 md:gap-2">
+              <Trophy className="w-4 h-4 md:w-5 md:h-5 text-yellow-400" />
               <div className="text-center">
-                <div className="text-lg font-bold leading-none">{finishedPlayers.length}</div>
-                <div className="text-xs text-blue-200">Finished</div>
+                <div className="text-sm md:text-lg font-bold leading-none">{finishedPlayers.length}</div>
+                <div className="text-xs text-blue-200 hidden md:block">Finished</div>
               </div>
             </div>
             {room?.settings?.tunnelMode && (
-              <div className="flex items-center gap-2">
-                <Zap className={`w-6 h-6 ${lightningActive ? 'text-white animate-pulse' : 'text-yellow-400'}`} />
+              <div className="flex items-center gap-1 md:gap-2">
+                <Zap className={`w-5 h-5 md:w-6 md:h-6 ${lightningActive ? 'text-white animate-pulse' : 'text-yellow-400'}`} />
                 <div>
-                  <div className={`text-xl font-bold ${lightningActive ? 'text-white' : ''}`}>
+                  <div className={`text-lg md:text-xl font-bold ${lightningActive ? 'text-white' : ''}`}>
                     {lightningActive ? lightningCountdown : lightningCharges}
                   </div>
-                  <div className="text-xs text-blue-200">
+                  <div className="text-xs text-blue-200 hidden md:block">
                     {lightningActive ? 'Active' : 'Lightning'}
                   </div>
                 </div>
@@ -886,38 +955,154 @@ export default function Game() {
 
       {/* Game Canvas - Full Height */}
       <div className="flex-1 flex items-center justify-center p-2 overflow-hidden">
-        <div className={`glass p-3 rounded-xl flex flex-col items-center justify-center max-h-full transition-all ${
+        <div className={`glass p-2 md:p-3 rounded-xl flex flex-col items-center justify-center max-h-full transition-all ${
           lightningActive ? 'ring-4 ring-yellow-400 shadow-lg shadow-yellow-400/50' : ''
         }`}>
           <canvas
             ref={canvasRef}
-            className="mx-auto"
+            className="mx-auto touch-none"
             style={{ imageRendering: 'pixelated' }}
           />
-          <div className="mt-2 text-center text-sm text-blue-200">
-            <kbd className={`px-2 py-1 glass-dark rounded transition-all ${activeKeys.has('up') ? 'bg-blue-500/50 scale-110 shadow-lg' : ''}`}>
-              ↑
-            </kbd>{' '}
-            <kbd className={`px-2 py-1 glass-dark rounded transition-all ${activeKeys.has('down') ? 'bg-blue-500/50 scale-110 shadow-lg' : ''}`}>
-              ↓
-            </kbd>{' '}
-            <kbd className={`px-2 py-1 glass-dark rounded transition-all ${activeKeys.has('left') ? 'bg-blue-500/50 scale-110 shadow-lg' : ''}`}>
-              ←
-            </kbd>{' '}
-            <kbd className={`px-2 py-1 glass-dark rounded transition-all ${activeKeys.has('right') ? 'bg-blue-500/50 scale-110 shadow-lg' : ''}`}>
-              →
-            </kbd>{' '}
-            <span className="text-xs">or WASD</span>
-            {room?.settings?.tunnelMode && (
-              <span>
-                {' • Press '}
-                <kbd className="px-2 py-1 glass-dark rounded bg-yellow-500/30">
-                  Space
-                </kbd>
-                {' for Lightning ⚡'}
-              </span>
-            )}
-          </div>
+          
+          {/* Desktop Controls Info */}
+          {!isMobile && (
+            <div className="mt-2 text-center text-sm text-blue-200">
+              <kbd className={`px-2 py-1 glass-dark rounded transition-all ${activeKeys.has('up') ? 'bg-blue-500/50 scale-110 shadow-lg' : ''}`}>
+                ↑
+              </kbd>{' '}
+              <kbd className={`px-2 py-1 glass-dark rounded transition-all ${activeKeys.has('down') ? 'bg-blue-500/50 scale-110 shadow-lg' : ''}`}>
+                ↓
+              </kbd>{' '}
+              <kbd className={`px-2 py-1 glass-dark rounded transition-all ${activeKeys.has('left') ? 'bg-blue-500/50 scale-110 shadow-lg' : ''}`}>
+                ←
+              </kbd>{' '}
+              <kbd className={`px-2 py-1 glass-dark rounded transition-all ${activeKeys.has('right') ? 'bg-blue-500/50 scale-110 shadow-lg' : ''}`}>
+                →
+              </kbd>{' '}
+              <span className="text-xs">or WASD</span>
+              {room?.settings?.tunnelMode && (
+                <span>
+                  {' • Press '}
+                  <kbd className="px-2 py-1 glass-dark rounded bg-yellow-500/30">
+                    Space
+                  </kbd>
+                  {' for Lightning ⚡'}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Mobile Touch Controls */}
+          {isMobile && (
+            <div className="mt-3 w-full max-w-xs">
+              <div className="flex flex-col items-center gap-2">
+                {/* Up Button */}
+                <button
+                  onTouchStart={(e) => {
+                    e.preventDefault();
+                    startMobileMove('up');
+                  }}
+                  onTouchEnd={(e) => {
+                    e.preventDefault();
+                    stopMobileMove('up');
+                  }}
+                  onTouchCancel={(e) => {
+                    e.preventDefault();
+                    stopMobileMove('up');
+                  }}
+                  className={`p-4 rounded-lg glass-dark active:bg-blue-500/50 transition-all touch-none ${
+                    activeKeys.has('up') ? 'bg-blue-500/50 scale-110 shadow-lg' : ''
+                  }`}
+                >
+                  <ArrowUp className="w-6 h-6" />
+                </button>
+                
+                {/* Left, Down, Right Buttons */}
+                <div className="flex gap-2 items-center">
+                  <button
+                    onTouchStart={(e) => {
+                      e.preventDefault();
+                      startMobileMove('left');
+                    }}
+                    onTouchEnd={(e) => {
+                      e.preventDefault();
+                      stopMobileMove('left');
+                    }}
+                    onTouchCancel={(e) => {
+                      e.preventDefault();
+                      stopMobileMove('left');
+                    }}
+                    className={`p-4 rounded-lg glass-dark active:bg-blue-500/50 transition-all touch-none ${
+                      activeKeys.has('left') ? 'bg-blue-500/50 scale-110 shadow-lg' : ''
+                    }`}
+                  >
+                    <ArrowLeft className="w-6 h-6" />
+                  </button>
+                  
+                  <button
+                    onTouchStart={(e) => {
+                      e.preventDefault();
+                      startMobileMove('down');
+                    }}
+                    onTouchEnd={(e) => {
+                      e.preventDefault();
+                      stopMobileMove('down');
+                    }}
+                    onTouchCancel={(e) => {
+                      e.preventDefault();
+                      stopMobileMove('down');
+                    }}
+                    className={`p-4 rounded-lg glass-dark active:bg-blue-500/50 transition-all touch-none ${
+                      activeKeys.has('down') ? 'bg-blue-500/50 scale-110 shadow-lg' : ''
+                    }`}
+                  >
+                    <ArrowDown className="w-6 h-6" />
+                  </button>
+                  
+                  <button
+                    onTouchStart={(e) => {
+                      e.preventDefault();
+                      startMobileMove('right');
+                    }}
+                    onTouchEnd={(e) => {
+                      e.preventDefault();
+                      stopMobileMove('right');
+                    }}
+                    onTouchCancel={(e) => {
+                      e.preventDefault();
+                      stopMobileMove('right');
+                    }}
+                    className={`p-4 rounded-lg glass-dark active:bg-blue-500/50 transition-all touch-none ${
+                      activeKeys.has('right') ? 'bg-blue-500/50 scale-110 shadow-lg' : ''
+                    }`}
+                  >
+                    <ArrowRight className="w-6 h-6" />
+                  </button>
+                </div>
+
+                {/* Lightning Button for Tunnel Mode */}
+                {room?.settings?.tunnelMode && (
+                  <button
+                    onTouchStart={(e) => {
+                      e.preventDefault();
+                      if (lightningCharges > 0 && !lightningActive) {
+                        useLightning();
+                      }
+                    }}
+                    disabled={lightningCharges === 0 || lightningActive}
+                    className={`px-6 py-3 rounded-lg font-semibold transition-all flex items-center gap-2 ${
+                      lightningCharges > 0 && !lightningActive
+                        ? 'bg-yellow-500/30 border-2 border-yellow-400 active:bg-yellow-500/50'
+                        : 'bg-gray-500/30 border-2 border-gray-600 opacity-50'
+                    }`}
+                  >
+                    <Zap className="w-5 h-5" />
+                    Lightning ({lightningCharges})
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

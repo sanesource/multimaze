@@ -8,8 +8,6 @@ import Results from './components/Results';
 function GameRouter() {
   const { gameState } = useGame();
 
-  console.log(gameState);
-
   switch (gameState) {
     case 'home':
       return <Home />;
