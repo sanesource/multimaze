@@ -1,0 +1,33 @@
+# robots.txt for MultiMaze - Multiplayer Maze Game
+# https://multimaze.game
+
+# Allow all search engines to crawl all content
+User-agent: *
+Allow: /
+
+# Special rules for major search engines
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 0
+
+User-agent: Slurp
+Allow: /
+Crawl-delay: 0
+
+# Disallow crawling of API endpoints and socket connections
+Disallow: /api/
+Disallow: /socket.io/
+
+# Disallow crawling of development files
+Disallow: /*.json$
+Disallow: /*.map$
+Disallow: /node_modules/
+Disallow: /dist/
+
+# Sitemap location
+Sitemap: https://multimaze.game/sitemap.xml
+
